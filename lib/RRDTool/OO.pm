@@ -31,19 +31,16 @@ our $OPTIONS = {
     graph      => { mandatory => [],
                     optional  => [],
                   },
-    dump       => { mandatory => [],
-                    optional  => [],
-                  },
-    restore    => { mandatory => [],
-                    optional  => [],
-                  },
-    fetch      => { mandatory => [],
-                    optional  => [],
-                  },
     fetch_start=> { mandatory => [qw(cf)],
                     optional  => [qw(start end)],
                   },
     fetch_next => { mandatory => [],
+                    optional  => [],
+                  },
+    dump       => { mandatory => [],
+                    optional  => [],
+                  },
+    restore    => { mandatory => [],
                     optional  => [],
                   },
     tune       => { mandatory => [],
@@ -84,6 +81,7 @@ sub check_options {
     my %optional  = map { $_ => 1 } @{$ref->{optional}};
     my %mandatory = map { $_ => 1 } @{$ref->{mandatory}};
 
+        # Check if we got all mandatory parameters
     for(@{$ref->{mandatory}}) {
         if(! exists $options_hash{$_}) {
             Log::Log4perl->get_logger("")->logcroak(
@@ -92,6 +90,8 @@ sub check_options {
         }
     }
     
+        # Check if all of the optional parameters we got are indeed
+        # valid optional parameters
     for(keys %options_hash) {
         if(! exists $optional{$_} and
            ! exists $mandatory{$_}) {
@@ -166,8 +166,8 @@ sub create {
            "RRA:$_->{cf}:$_->{xff}:$_->{steps}:$_->{rows}";
     }
 
-    DEBUG "rrdtool create @rrdtool_options";
-    RRDs::create(@rrdtool_options) or die "Cannot create rrd";
+    INFO "rrdtool create @rrdtool_options";
+    RRDs::create(@rrdtool_options);
 }
 
 #################################################
@@ -175,21 +175,33 @@ sub update {
 #################################################
     my($self, @options) = @_;
 
-# TODO: takes multiple values (see manual)
-
     check_options "update", \@options;
 
     my %options_hash = @options;
 
     $options_hash{time} = "N" unless exists $options_hash{time};
 
-    my $update_string = "$options_hash{time}:$options_hash{value}";
+    my $update_string  = "$options_hash{time}:";
+    my @update_options = ();
 
-    DEBUG "rrdtool update $self->{file} $update_string";
+    if(exists $options_hash{values}) {
+        if(ref($options_hash{values} eq "HASH")) {
+                # Do the template magic
+            push @update_options, "--template", 
+                 join(":", keys %{$options_hash{values}});
+            $update_string .= join ":", values %{$options_hash{values}};
+        } else {
+                # We got multiple values in correct order
+            $update_string .= join ":", @{$options_hash{values}};
+        }
+    } else {
+            # We just have a single value
+        $update_string .= $options_hash{value};
+    }
 
-    my $rc = RRDs::update($self->{file}, $update_string);
+    INFO "rrdtool update $self->{file} @update_options $update_string";
 
-    return $rc;
+    RRDs::update($self->{file}, @update_options, $update_string);
 }
 
 #################################################
@@ -208,10 +220,66 @@ sub fetch_start {
 
     DEBUG "rrdtool fetch_start $self->{file} $cf @options";
 
-    $self->{fetch_result} = RRDs::fetch($self->{file}, $cf, @options) or 
-       die "Cannot run 'fetch $self->{file} @options'";
+    ($self->{fetch_time_current}, 
+     $self->{fetch_time_step},
+     $self->{fetch_ds_names},
+     $self->{fetch_data}) = RRDs::fetch($self->{file}, $cf, @options);
+
+    unless(defined $self->{fetch_time_current}) {
+        LOGDIE "RRDs::fetch $self->{file}, $cf, @options failed";
+    }
 
     $self->{fetch_idx} = 0;
+}
+
+#################################################
+sub fetch_next {
+#################################################
+    my($self) = @_;
+
+    if(!defined $self->{fetch_data}->[$self->{fetch_idx}]) {
+        INFO "Idx $self->{fetch_idx} returned undef";
+        return ();
+    }
+
+    my @values = @{$self->{fetch_data}->[$self->{fetch_idx}++]};
+
+        # Put the time of the data point in front
+    unshift @values, $self->{fetch_time_current};
+
+    INFO "rrdtool fetch $self->{file} ", array_as_string(\@values) if @values;
+
+    $self->{fetch_time_current} += $self->{fetch_time_step};
+
+    return @values;
+}
+
+#################################################
+sub array_as_string {
+#################################################
+    my($arrayref) = @_;
+
+    return join "-", map { defined $_ ? $_ : '[undef]' } @$arrayref;
+}
+
+#################################################
+sub fetch_skip_undef {
+#################################################
+    my($self) = @_;
+
+    {
+        if(!defined $self->{fetch_data}->[$self->{fetch_idx}]) {
+            return undef;
+        }
+   
+        my $value = $self->{fetch_data}->[$self->{fetch_idx}]->[0];
+
+        unless(defined $value) {
+            $self->{fetch_idx}++;
+            $self->{fetch_time_current} += $self->{fetch_time_step};
+            redo;
+        }
+    }
 }
 
 #################################################
@@ -226,42 +294,6 @@ sub add_dashes {
     }
    
     return @options;
-}
-
-#################################################
-sub fetch_next {
-#################################################
-    my($self) = @_;
-
-    if(!defined $self->{fetch_result}->[$self->{fetch_idx}]) {
-        DEBUG "Idx $self->{fetch_idx} returned undef";
-        return undef;
-    }
-
-    my $value = $self->{fetch_result}->[$self->{fetch_idx}++]->[0];
-
-    DEBUG "Found value: $value\n" if defined $value;
-
-    return $value;
-}
-
-#################################################
-sub fetch_skip_undef {
-#################################################
-    my($self) = @_;
-
-    {
-        if(!defined $self->{fetch_result}->[$self->{fetch_idx}]) {
-            return undef;
-        }
-   
-        my $value = $self->{fetch_result}->[$self->{fetch_idx}]->[0];
-
-        unless(defined $value) {
-            $self->{fetch_idx}++;
-            redo;
-        }
-    }
 }
 
 #################################################
@@ -342,16 +374,35 @@ Update the round robin database with a value and an optional time stamp.
 If the timestamp is omitted, C<RRDTool::OO> will supply C<U> for C<rrdtool>,
 indicating that the current time should be used.
 
-=item I<$rrd-E<gt>fetch_start(cf =E<gt> $cons_function, ... )>
+When updating multiple data sources, use the C<values> parameter
+instead of C<value> and pass an arrayref:
 
-Initializes the iterator to fetch data from the RRD.
+    $rrd->update(time => $time, values => [$val1, $val2, ...]);
+
+The C<values> parameter also accepts a hashref, mapping data source
+names to values:
+
+    $rrd->update(time => $time, 
+                 values => { $dsname1 => $val1, 
+                             $dsname2 => $val2, ...});
+
+C<RRDTool::OO> will transform this automagically
+into C<RRDTool's> I<template> syntax.
+
+=item I<$rrd-E<gt>fetch_start(con_function =E<gt> $con_function, ... )>
+
+Initializes the iterator to fetch data from the RRD. Currently, this
+fetches all values from the RRA and caches them in memory. I might
+change this behaviour to cache only the last timestamp and keep fetching.
 
 =item I<$rrd-E<gt>fetch_skip_undef()>
 
-Positions the iterator to the first defined value in the RRD, skipping
-undefined values.
+Skips all undef values in the RRA and
+positions the iterator right before the first defined value.
+If all values in the RRA are undefined, the
+a following C<$rrd-E<gt>fetch_next()> will return C<undef>.
 
-=item I<$rrd-E<gt>fetch_next()>
+=item I<($time, $value, ...) = $rrd-E<gt>fetch_next()>
 
 Gets the next row from the RRD iterator, initialized by a previous call
 to C<$rrd-E<gt>fetch_start()>.
@@ -362,6 +413,17 @@ Return the message of the last error that occurred while interacting
 with C<RRDTool::OO>.
 
 =back
+
+The following methods are not yet implemented:
+
+C<dump>,
+C<restore>,
+C<tune>,
+C<last>,
+C<info>,
+C<rrdresize>,
+C<xport>,
+C<rrdcgi>.
 
 =head1 SEE ALSO
 

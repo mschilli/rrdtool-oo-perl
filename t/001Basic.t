@@ -3,8 +3,8 @@ use Test::More qw(no_plan);
 use RRDTool::OO;
 
 use Log::Log4perl qw(:easy);
-#Log::Log4perl->easy_init({level => $DEBUG, layout => "%L: %m%n", 
-#                          file => 'stdout'});
+Log::Log4perl->easy_init({level => $INFO, layout => "%L: %m%n", 
+                          file => 'stdout'});
 
 my $rrd;
 
@@ -70,19 +70,22 @@ ok(-f "foo", "RRD exists");
 # Check updates
 ######################################################################
 
-for(my $i=100; $i >= 0; $i -= 5) {
+my $items_in = 0;
+
+for(my $i=400; $i >= 0; $i -= 20) {
+    $items_in++;
     my $time  = time() - $i;
     my $value = 1000 + $i;
-    ok($rrd->update(value => $value, time => $time), "update $time:$value");
+    $rrd->update(value => $value, time => $time);
 }
 
-$rrd->fetch_start(start => time() - 100, cf => 'MAX');
+$rrd->fetch_start(start => time() - 500, cf => 'MAX');
 $rrd->fetch_skip_undef();
 my $count = 0;
-while(my $val = $rrd->fetch_next()) {
+while(my($time, $val) = $rrd->fetch_next()) {
     $count++;
 }
-is($count, 10, "10 items found");
+is($count, 11, "11 items found ($items_in in)");
 
 ######################################################################
 # Failed update: time went backwards
