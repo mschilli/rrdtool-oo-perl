@@ -9,3 +9,5 @@ t/001Basic.t
 t/002Pod.t
 t/003Discover.t
 t/004Template.t
+t/005Graph.t
+t/006Tune.t
