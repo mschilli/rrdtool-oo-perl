@@ -6,7 +6,7 @@ use Log::Log4perl qw(:easy);
 ##############################################
 # Configuration
 ##############################################
-my $VIEW     = 0;     # Display graphs
+my $VIEW     = 1;     # Display graphs
 my $LOGLEVEL = $OFF;  # Level of detail
 ##############################################
 
@@ -197,6 +197,8 @@ $rrd->graph(
   vertical_label => 'My Salary',
   start          => $start_time,
   end            => $start_time + $nof_iterations * 60,
+  width          => 700,
+  height         => 300,
   draw           => {
           type      => "line",
           thickness => 3,
