@@ -11,3 +11,4 @@ t/003Discover.t
 t/004Template.t
 t/005Graph.t
 t/006Tune.t
+t/007Dump.t

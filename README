@@ -1,5 +1,5 @@
 ######################################################################
-    RRDTool::OO 0.04
+    RRDTool::OO 0.05
 ######################################################################
 
 NAME
@@ -296,8 +296,20 @@ DESCRIPTION
             http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/rrdgraph.html
 
     *$rrd->dump()*
-        *Not implemented, because it's not available via "RRDs". Once it is,
-        it will be available via "RRDTool" automatically.*
+        *Not available via "RRDs" yet, but hopefully soon.*
+
+        Dumps the RRD in XML format to STDOUT. If you want to dump it into a
+        file instead, do this:
+
+            unless (my $pid = open DUMP, "-|") {
+              die "Can't fork: $!" unless defined $pid;
+              $rrd->dump();
+              exit 0;
+            }
+
+            open OUT, ">out";
+            print OUT $_ for <DUMP>;
+            close OUT;
 
     *my $hashref = $rrd->info()*
         Grabs the RRD's meta data and returns it as a hashref, holding a map
@@ -307,8 +319,7 @@ DESCRIPTION
         Return the RRD's last update time.
 
     *$rrd->restore(xml =* "file.xml")>
-        *Not implemented, because it's not available via "RRDs". Once it is,
-        it will be available via "RRDTool" automatically.*
+        *Not available via "RRDs" yet, but hopefully soon.*
 
         Restore a RRD from a "dump". The "xml" parameter specifies the name
         of the XML file containing the dump. If the optional flag

@@ -1,4 +1,9 @@
 
+0.05 (not yet released)
+    (ms) added support for dump() and restore(). Test cases in
+         t/007Dump.t will wait until these functions are 
+         available in rrdtool, and are skipped until then.
+
 0.04 05/22/2004
     (ms) added more functionality to graph(), new test cases.
     (ms) if a graph contains several files, use the defaults

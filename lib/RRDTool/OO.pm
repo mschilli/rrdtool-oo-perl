@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -53,8 +53,8 @@ our $OPTIONS = {
     dump       => { mandatory => [],
                     optional  => [],
                   },
-    restore    => { mandatory => [qw(xml)],
-                    optional  => [qw(range_check)],
+    restore    => { mandatory => [qw()],
+                    optional  => [qw(xml range_check)],
                   },
     tune       => { mandatory => [],
                     optional  => [qw(heartbeat minimum maximum 
@@ -244,7 +244,7 @@ sub RRDs_execute {
     my ($self, $command, @args) = @_;
 
     my $logger = get_logger("rrdtool");
-    $logger->info("rrdtool $command @args");
+    $logger->info("rrdtool '$command' ", join " ", map { "'$_'" } @args);
 
     my @rc;
     my $error;
@@ -521,12 +521,17 @@ sub restore {
 #################################################
     my($self, @options) = @_;
 
+        # Called with only the xml file
+    if(@options == 1) {
+        @options = (xml => $options[0]);
+    }
+
     my %options_hash = @options;
-    delete $options_hash{xml};
+    my $xml = delete $options_hash{xml};
 
     @options = add_dashes(\%options_hash);
 
-    $self->RRDs_execute("restore", $options_hash{xml}, $self->{file}, 
+    $self->RRDs_execute("restore", $xml, $self->{file}, 
                         @options);
 }
 
@@ -1025,8 +1030,20 @@ on what each of them is used for:
 
 =item I<$rrd-E<gt>dump()>
 
-I<Not implemented, because it's not available via C<RRDs>. Once it is,
-it will be available via C<RRDTool> automatically.>
+I<Not available via C<RRDs> yet, but hopefully soon.>
+
+Dumps the RRD in XML format to STDOUT. If you want to dump it into a file
+instead, do this:
+
+    unless (my $pid = open DUMP, "-|") {
+      die "Can't fork: $!" unless defined $pid;
+      $rrd->dump();
+      exit 0;
+    }
+
+    open OUT, ">out";
+    print OUT $_ for <DUMP>;
+    close OUT;
 
 =item I<my $hashref = $rrd-E<gt>info()>
 
@@ -1039,8 +1056,7 @@ Return the RRD's last update time.
 
 =item I<$rrd-E<gt>restore(xml => "file.xml")>
 
-I<Not implemented, because it's not available via C<RRDs>. Once it is,
-it will be available via C<RRDTool> automatically.>
+I<Not available via C<RRDs> yet, but hopefully soon.>
 
 Restore a RRD from a C<dump>. The C<xml> parameter specifies the name
 of the XML file containing the dump. If the optional flag C<range_check>
