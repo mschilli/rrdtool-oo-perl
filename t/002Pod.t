@@ -6,13 +6,13 @@ use warnings;
 
 my $count = 0;
 
-#    use Log::Log4perl qw(:easy);
-#
-#    Log::Log4perl->easy_init({
-#        level    => $INFO, 
-#        category => 'rrdtool',
-#        layout   => '%m%n',
-#    }); 
+    use Log::Log4perl qw(:easy);
+
+    Log::Log4perl->easy_init({
+        level    => $INFO, 
+        category => 'rrdtool',
+        layout   => '%m%n',
+    }); 
 
 ### START POD HERE ###
 
@@ -50,9 +50,35 @@ my $count = 0;
 
         # Draw a graph in a PNG image
     $rrd->graph(
-      file           => "mygraph.png",
+      image          => "mygraph.png",
       vertical_label => 'My Salary',
       start          => time() - 10,
+    );
+
+        # Area graph
+    $rrd->graph(
+      image          => "mygraph.png",
+      vertical_label => 'My Salary',
+      start          => time() - 10,
+      draw           => {
+          type      => "area",
+          color     => '0000ff',
+      },
+    );
+
+        # Stacked graph
+    $rrd->graph(
+      image          => "mygraph.png",
+      vertical_label => 'My Salary',
+      start          => time() - 10,
+      draw           => {
+          type      => "area",
+          color     => '0000ff',
+      },
+      draw           => {
+          type      => "stack",
+          color     => '00ff00',
+      },
     );
 
 ### END POD HERE ###

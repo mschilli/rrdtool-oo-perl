@@ -28,11 +28,20 @@ our $OPTIONS = {
     update     => { mandatory => [qw()],
                     optional  => [qw(time value values)],
                   },
-    graph      => { mandatory => [qw(file)],
-                    optional  => [qw(vertical_label start end)],
+    graph      => { mandatory => [qw(image)],
+                    optional  => [qw(vertical_label title start end x_grid
+                                     y_grid alt_y_grid no_minor alt_y_mrtg
+                                     alt_autoscale alt_autoscale_max 
+                                     units_exponent units_length width
+                                     height interlaced imginfo imgformat
+                                     overlay unit lazy upper_limit
+                                     logarithmic color no_legend only_graph
+                                     force_rules_legend title step draw
+                                    )],
                     draw      => {
                       mandatory => [qw()],
-                      optional  => [qw(dsname cfunc thickness color)],
+                      optional  => [qw(file dsname cfunc thickness 
+                                       type color)],
                     },
                   },
     fetch_start=> { mandatory => [qw()],
@@ -404,11 +413,13 @@ sub graph {
     my %options_hash = @options;
     my $draw_count   = 1;
 
-    my $file = delete $options_hash{file};
+    my $image = delete $options_hash{image};
     delete $options_hash{draw};
 
     for(my $i=0; $i < @options; $i += 2) {
-        push @draws, $options[$i+1] if $options[$i] eq "draw";
+        if($options[$i] eq "draw") {
+            push @draws, $options[$i+1];
+        }
     }
 
     @options = add_dashes(\%options_hash);
@@ -437,6 +448,8 @@ sub graph {
     for(@draws) {
         check_options "graph/draw", [%$_];
 
+use Data::Dumper;
+print Dumper($_);
         $_->{thickness} ||= 1;        # LINE1 is default
         $_->{color}     ||= 'FF0000'; # red is default
 
@@ -446,11 +459,22 @@ sub graph {
                        "$options_hash{dsname}:" .
                        "$options_hash{cfunc}";
             #LINE2:myload#FF0000
-        push @options, "LINE$_->{thickness}:draw$draw_count#$_->{color}";
+        $_->{type} ||= 'line';
+
+        if($_->{type} eq "line") {
+            push @options, "LINE$_->{thickness}:draw$draw_count#$_->{color}";
+        } elsif($_->{type} eq "area") {
+            push @options, "AREA:draw$draw_count#$_->{color}";
+        } elsif($_->{type} eq "stack") {
+            push @options, "STACK:draw$draw_count#$_->{color}";
+        } else {
+            die "Invalid graph type: $_->{type}";
+        }
+        
         $draw_count++;
     }
 
-    unshift @options, $file;
+    unshift @options, $image;
 
     $self->RRDs_execute("graph", @options);
 }
@@ -765,7 +789,6 @@ be clear:
     $rrd->graph(
       file           => $image_file_name,
       vertical_label => 'My Salary',
-      color          => 'FF0000', # (red)
       start          => time() - 24*3600,
       end            => time(),
       draw           => { thickness => 2,
@@ -786,19 +809,22 @@ one to draw:
         cfunc     => 'MAX'},
     );
 
+If C<draw> doesn't define a C<type>, it defaults to C<"line">. Other
+values are C<"area"> for solid colored areas and C<"stack"> for 
+graphical values stacked on top of each other.
 And you can certainly have more than one graph in the picture:
 
     $rrd->graph(
       file           => $image_file_name,
       vertical_label => 'My Salary',
       draw           => {
-        thickness => 2,
-        color     => 'FF0000', # red
+        type      => 'area',
+        color     => 'FF0000', # red area
         dsname    => "load",
         cfunc     => 'MAX'},
       draw        => {
-        thickness => 2,
-        color     => '00FF00', # green
+        type      => 'stack',
+        color     => '00FF00', # a green area stacked on top of the red one 
         dsname    => "load",
         cfunc     => 'AVERAGE'},
     );

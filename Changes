@@ -1,4 +1,7 @@
 
+0.04 (not yet release)
+    (ms) added more functionality to graph()
+
 0.03 05/18/2004
     (ms) fixed discovery of CFs
     (ms) fixed update with values/hash and added test case
