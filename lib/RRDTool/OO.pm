@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -41,7 +41,7 @@ our $OPTIONS = {
                     draw      => {
                       mandatory => [qw()],
                       optional  => [qw(file dsname cfunc thickness 
-                                       type color)],
+                                       type color legend)],
                     },
                     color     => {
                       mandatory => [qw()],
@@ -483,6 +483,7 @@ sub graph {
 
         $_->{thickness} ||= 1;        # LINE1 is default
         $_->{color}     ||= 'FF0000'; # red is default
+        $_->{legend}    ||= '';       # no legend by default
 
         $_->{file}   = first_def $_->{file}, $self->{file};
 
@@ -507,12 +508,15 @@ sub graph {
             #LINE2:myload#FF0000
         $_->{type} ||= 'line';
 
+        my $draw_attributes = ":draw$draw_count#$_->{color}";
+        $draw_attributes .= ":$_->{legend}" if length $_->{legend};
+
         if($_->{type} eq "line") {
-            push @options, "LINE$_->{thickness}:draw$draw_count#$_->{color}";
+            push @options, "LINE$_->{thickness}$draw_attributes";
         } elsif($_->{type} eq "area") {
-            push @options, "AREA:draw$draw_count#$_->{color}";
+            push @options, "AREA$draw_attributes";
         } elsif($_->{type} eq "stack") {
-            push @options, "STACK:draw$draw_count#$_->{color}";
+            push @options, "STACK$draw_attributes";
         } else {
             die "Invalid graph type: $_->{type}";
         }
@@ -786,8 +790,9 @@ RRDTool::OO - Object-oriented interface to RRDTool
       vertical_label => 'My Salary',
       start          => time() - 10,
       draw           => {
-          type  => "area",
-          color => '0000FF',
+          type   => "area",
+          color  => '0000FF',
+          legend => "Salary over Time",
       }
     );
 
@@ -996,7 +1001,9 @@ an image file on disk is as easy as
       image          => $image_file_name,
       vertical_label => 'My Salary',
       draw           => { thickness => 2,
-                          color     => 'FF0000'},
+                          color     => 'FF0000',
+                          legend    => 'Salary over Time',
+                        },
     );
 
 This will assume a start time of 24 hours before now and an
@@ -1009,7 +1016,9 @@ be clear:
       start          => time() - 24*3600,
       end            => time(),
       draw           => { thickness => 2,
-                          color     => 'FF0000'},
+                          color     => 'FF0000',
+                          legend    => 'Salary over Time',
+                        },
     );
 
 As always, C<RRDTool::OO> will pick reasonable defaults for parameters
@@ -1057,13 +1066,16 @@ which file you want to draw the data from per C<draw>:
       vertical_label => 'Network Traffic',
       draw           => {
         file      => "file1.rrd",
+        legend    => "First Source",
       },
       draw        => {
         file      => "file2.rrd",
         type      => 'stack',
         color     => '00FF00', # a green area stacked on top of the red one 
         dsname    => "load",
-        cfunc     => 'AVERAGE'},
+        legend    => "Second Source",
+        cfunc     => 'AVERAGE'
+      },
     );
 
 If a C<file> parameter is specified per C<draw>, the defaults for C<dsname>

@@ -57,7 +57,7 @@ $rrd->graph(
     end            => $start_time + $nof_iterations * 60,
     width          => 700,
     height         => 300,
-    color          => { back   => '#0e0e0e',
+    color          => { back   => '#eeeeee',
                         arrow  => '#ff0000',
                         canvas => '#eebbbb',
                       },
@@ -65,6 +65,7 @@ $rrd->graph(
     draw           => {
         type      => "area",
         color     => '0000ff',
+        legend    => 'first legend',
         dsname    => 'load1',
     },
         # Second graph
@@ -72,6 +73,7 @@ $rrd->graph(
         type      => "stack",
         color     => '00ff00',
         dsname    => 'load2',
+        legend    => 'second legend',
     },
 );
 

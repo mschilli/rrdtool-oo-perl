@@ -1,5 +1,5 @@
 ######################################################################
-    RRDTool::OO 0.09
+    RRDTool::OO 0.10
 ######################################################################
 
 NAME
@@ -42,8 +42,9 @@ SYNOPSIS
           vertical_label => 'My Salary',
           start          => time() - 10,
           draw           => {
-              type  => "area",
-              color => '0000FF',
+              type   => "area",
+              color  => '0000FF',
+              legend => "Salary over Time",
           }
         );
 
@@ -231,7 +232,9 @@ DESCRIPTION
               image          => $image_file_name,
               vertical_label => 'My Salary',
               draw           => { thickness => 2,
-                                  color     => 'FF0000'},
+                                  color     => 'FF0000',
+                                  legend    => 'Salary over Time',
+                                },
             );
 
         This will assume a start time of 24 hours before now and an end time
@@ -243,7 +246,9 @@ DESCRIPTION
               start          => time() - 24*3600,
               end            => time(),
               draw           => { thickness => 2,
-                                  color     => 'FF0000'},
+                                  color     => 'FF0000',
+                                  legend    => 'Salary over Time',
+                                },
             );
 
         As always, "RRDTool::OO" will pick reasonable defaults for
@@ -291,13 +296,16 @@ DESCRIPTION
               vertical_label => 'Network Traffic',
               draw           => {
                 file      => "file1.rrd",
+                legend    => "First Source",
               },
               draw        => {
                 file      => "file2.rrd",
                 type      => 'stack',
                 color     => '00FF00', # a green area stacked on top of the red one 
                 dsname    => "load",
-                cfunc     => 'AVERAGE'},
+                legend    => "Second Source",
+                cfunc     => 'AVERAGE'
+              },
             );
 
         If a "file" parameter is specified per "draw", the defaults for

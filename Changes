@@ -1,4 +1,7 @@
 
+0.10 (not yet released)
+    (ms) Added legends to graph()
+
 0.09 (10/08/2004)
     (ms) Fixed bug [cpan #7897]. new() now accepts a raise_error setting.
 
