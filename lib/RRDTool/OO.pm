@@ -17,8 +17,8 @@ our $OPTIONS = {
     create     => { mandatory => [qw(data_source archive)],
                     optional  => [qw(step start)],
                     data_source => { 
-                      mandatory => [qw(name type heartbeat)],
-                      optional  => [qw(min max)],
+                      mandatory => [qw(name type)],
+                      optional  => [qw(min max heartbeat)],
                     },
                     archive     => {
                       mandatory => [qw(rows)],
@@ -151,9 +151,13 @@ sub create {
     push @rrdtool_options, "--step", $options_hash{step} if
         exists $options_hash{step};
 
+        # RRDtool default setting
+    $options_hash{step} ||= 300;
+
     for(@data_sources) {
        # DS:ds-name:DST:heartbeat:min:max
        DEBUG "data_source: @{[%$_]}";
+       $_->{heartbeat} ||= $options_hash{step} * 2;
        push @rrdtool_options, 
            "DS:$_->{name}:$_->{type}:$_->{heartbeat}:" .
            (defined $_->{min} ? $_->{min} : "U") . ":" .
@@ -200,7 +204,8 @@ sub RRDs_execute {
 #################################################
     my ($self, $command, @args) = @_;
 
-    INFO "rrdtool $command @args";
+    my $logger = get_logger("rrdtool");
+    $logger->info("rrdtool $command @args");
 
     my @rc;
     my $error;
@@ -378,36 +383,52 @@ RRDTool::OO - Object-oriented interface to RRDTool
 
 =head1 SYNOPSIS
 
-        # Constructor
-    my $rrd = RRDTool::OO->new( file => "myrrdfile.rdd" );
+        # Constructor     
+    my $rrd = RRDTool::OO->new(
+                 file => "myrrdfile.rdd" );
 
         # Create a round-robin database
     $rrd->create(
-         data_source => { name => "mydatasource",
-                          type => "GAUGE" },
-         archive     => { rows => 5 });
+         step        => 1,  # one-second intervals
+         data_source => { name      => "mydatasource",
+                          type      => "GAUGE" },
+         archive     => { rows      => 5 });
 
-        # Update RRD with a sample value, 
-        # use current time.
-    $rrd->update(42);
+        # Update RRD with sample values, use current time.
+    for(1..3) {
+        $rrd->update($_);
+        sleep(1);
+    }
 
         # Start fetching values from one day back, 
-        # but skip undef'd ones first
-    $rrd->fetch_start(start => $time - 3600*24);
+        # but skip undefined ones first
+    $rrd->fetch_start();
     $rrd->fetch_skip_undef();
 
         # Fetch stored values
     while(my($time, $value) = $rrd->fetch_next()) {
-         print "$time: $value\n";
+         print "$time: ", 
+               defined $value ? $value : "[undef]", "\n";
     }
 
 =head1 DESCRIPTION
 
 C<RRDTool::OO> is an object-oriented interface to Tobi Oetiker's 
-round robin database RRDTool. It uses the C<RRDs> module, under
-the hood, but provides a user-friendly interface with named parameters 
-instead of the more compact but rather terse RRDTool configuration 
-notation.
+round robin database tool I<rrdtool>. It uses I<rrdtool>'s 
+C<RRDs> module to get access to I<rrdtool>'s shared library.
+
+C<RRDTool::OO> tries to marry I<rrdtool>'s database engine with the
+dwimminess and whipuptitude Perl programmers take for granted. Using
+C<RRDTool::OO> abstracts away implementation details of the RRD engine,
+uses easy to memorize named paramets and sets meaningful defaults 
+for parameters not needed in simple cases.
+For the experienced user, however, it provides full access to
+I<rrdtool>'s API.
+(Please check L<Development Status> to verify
+how much of it has been implemented yet, though, since this module
+is under development :).
+
+=head2 FUNCTIONS
 
 =over 4
 
@@ -420,17 +441,38 @@ get access to the following methods.
 
 =item I<$rrd-E<gt>create( ... )>
 
-Creates a new round robin database (RRD). It consists of one or more
+Creates a new round robin database (RRD). A RRD consists of one or more
 data sources and one or more archives:
 
     $rrd->create(
-         data_source => { name => $ds_name }
-         archive     => { name      => $arch_name,
-                          rows      => 5,
-                        });
+         step        => 60,
+         data_source => { name      => "mydatasource",
+                          type      => "GAUGE" },
+         archive     => { rows      => 5 });
 
-This defines an archive with a 1:1 mapping between primary data 
-points and archive points. 
+This defines a RRD database with a step rate of 60 seconds in between
+primary data points. 
+
+It also sets up one data source named C<my_data_source>
+of type C<GAUGE>, telling I<rrdtool> to use values of data samples 
+as-is, without additional trickery.  
+
+And it creates a single archive with a 1:1 mapping between primary data 
+points and archive points, with a capacity to hold five data points.
+
+The RRD's C<step> parameter is optional, and will be set to 300 seconds
+by I<rrdtool> by default.
+
+In addition to the mandatory settings for C<name> and C<type>,
+C<data_source> parameter takes the following optional parameters:
+C<min> (minimum input, defaults to C<U>),
+C<max> (maximum input, defaults to C<U>), 
+C<heartbeat> (defaults to twice the RRD's step rate).
+
+Archives expect at least one parameter, C<rows> indicating the number
+of data points the archive is configured to hold. If nothing else is
+set, I<rrdtool> will store primary data points 1:1 in the archive.
+
 If you want
 to combine several primary data points into one archive point, specify
 values for 
@@ -438,27 +480,29 @@ C<cpoints> (the number of points to combine) and C<cfunc>
 (the consolidation function) explicitely:
 
     $rrd->create(
-         data_source => { name => $ds_name }
-         archive     => { name      => $arch_name,
-                          rows      => 5,
+         step        => 60,
+         data_source => { name      => "mydatasource",
+                          type      => "GAUGE" },
+         archive     => { rows      => 5,
                           cpoints   => 10,
                           cfunc     => 'AVERAGE',
                         });
 
 This will collect 10 data points to form one archive point, using
-the calculated average. 
-Other options for C<cfunc> are 
+the calculated average, as indicated by the parameter C<cfunc>
+(Consolidation Function, CF). Other options for C<cfunc> are 
 C<MIN>, C<MAX>, and C<LAST>.
 
 =item I<$rrd-E<gt>update( ... ) >
 
-Update the round robin database with a value and an optional time stamp.
+Update the round robin database with a new data sample, 
+consisting of a value and an optional time stamp.
 If called with a single parameter, like in
 
     $rrd->update($value);
 
-then the current timestamp and the defined C<$value> are used. If C<update>
-is called with a named parameter list like in
+then the current timestamp and the defined C<$value> will be used. 
+If C<update> is called with a named parameter list like in
 
     $rrd->update(time => $time, value => $value);
 
@@ -466,11 +510,14 @@ then the given timestamp C<$time> is used along with the given value
 C<$value>.
 
 When updating multiple data sources, use the C<values> parameter
-instead of C<value> and pass an arrayref:
+(instead of C<value>) and pass an arrayref:
 
     $rrd->update(time => $time, values => [$val1, $val2, ...]);
 
-The C<values> parameter also accepts a hashref, mapping data source
+This way, I<rrdtool> expects you to pass in the data values in 
+exactly the same order as the data sources were defined in the
+C<create> method. If that's not the case,
+then the C<values> parameter also accepts a hashref, mapping data source
 names to values:
 
     $rrd->update(time => $time, 
@@ -486,13 +533,14 @@ Initializes the iterator to fetch data from the RRD. This works nicely without
 any parameters if
 your archives are using a single consolidation function (e.g. C<MAX>).
 If there's several archives in the RRD using different consolidation
-functions, you have to specify the one you want:
+functions, you have to specify which one you want:
 
-    $rrd->fetch_start(cfunc => "MAX",
-                      start => time()-10*60
-                     );
+    $rrd->fetch_start(cfunc => "MAX");
 
 Other options for C<cfunc> are C<MIN>, C<AVERAGE>, and C<LAST>.
+
+C<fetch_start> features a number of optional parameters: 
+C<start>, C<end> and C<resolution>.
 
 If the C<start>
 time parameter is omitted, the fetch starts 24 hours before the end of the 
@@ -501,18 +549,28 @@ archive. Also, an C<end> time can be specified:
     $rrd->fetch_start(start => time()-10*60,
                       end   => time());
 
-Another optional parameter is C<resolution> (seconds per value). 
-It defaults to the highest
-one available. See the C<rrdtool fetch> manual page for details.
+The third optional parameter,
+C<resolution> defaults to the highest resolution available and can
+be set to a value in seconds, specifying the time interval between
+the data samples extracted from the RRD.
+See the C<rrdtool fetch> manual page for details.
 
-The current implementation
-fetches all values from the RRA in one swoop 
-and caches them in memory. I might
-change this behaviour to cache only the last timestamp and keep fetching.
+Development note: The current implementation
+fetches I<all> values from the RRA in one swoop 
+and caches them in memory. This might 
+change in the future, to cache only the last timestamp and keep fetching
+from the RRD with every C<fetch_next()> call.
 
 =item I<$rrd-E<gt>fetch_skip_undef()>
 
-Skips all undef values in the RRA and
+I<rrdtool> doesn't remember the time the first data sample went into the
+archive. So if you run a I<rrdtool fetch> with a start time of 24 hours
+ago and you've only submitted a couple of samples to the archive, you'll
+see many C<undef> values.
+
+Starting from the current iterator position (or at the specified C<start>
+time immediately after a C<fetch_start()>), C<fetch_skip_undef()>
+will skip all C<undef> values in the RRA and
 positions the iterator right before the first defined value.
 If all values in the RRA are undefined, the
 a following C<$rrd-E<gt>fetch_next()> will return C<undef>.
@@ -520,7 +578,8 @@ a following C<$rrd-E<gt>fetch_next()> will return C<undef>.
 =item I<($time, $value, ...) = $rrd-E<gt>fetch_next()>
 
 Gets the next row from the RRD iterator, initialized by a previous call
-to C<$rrd-E<gt>fetch_start()>.
+to C<$rrd-E<gt>fetch_start()>. Returns the time of the archive point
+along with all values as a list.
 
 =item I<$rrd-E<gt>error_message()>
 
@@ -529,8 +588,11 @@ with C<RRDTool::OO>.
 
 =back
 
+=head2 Development Status
+
 The following methods are not yet implemented:
 
+C<graph>,
 C<dump>,
 C<restore>,
 C<tune>,
@@ -543,7 +605,7 @@ C<rrdcgi>.
 =head2 Error Handling
 
 By default, C<RRDTool::OO>'s methods will throw fatal errors (as in: 
-they're calling C<die()>) if the underlying C<RRDs::*> commands indicate
+they're calling C<die>) if the underlying C<RRDs::*> commands indicate
 failure.
 
 This behaviour can be overridden by calling the constructor with
@@ -555,11 +617,47 @@ the C<raise_error> flag set to false:
     );
 
 In this mode, RRDTool's methods will just pass back values returned
-from the underlying C<RRDs> functions if an error happens.
+from the underlying C<RRDs> functions if an error happens (usually
+1 if successful and C<undef> if an error occurs).
+
+=head2 Debugging
+
+C<RRDTool::OO> is C<Log::Log4perl> enabled, so if you want to know 
+what's going on under the hood, just turn it on:
+
+    use Log::Log4perl qw(:easy);
+
+    Log::Log4perl->easy_init({
+        level    => $DEBUG
+    }); 
+
+If you're interested particularily in I<rrdtool> commands issued
+by C<RRDTool::OO> while you're operating it, just enable the
+category C<"rrdtool">:
+
+    Log::Log4perl->easy_init({
+        level    => $INFO, 
+        category => 'rrdtool',
+        layout   => '%m%n',
+    }); 
+
+
+This will display all C<rrdtool> commands that C<RRDTool::OO> submits
+to the shared library. Let's turn it on for the code snippet in the
+L<SYNOPSIS> section of this manual page and watch the output:
+
+    rrdtool create myrrdfile.rdd --step 1 \
+            DS:mydatasource:GAUGE:2:U:U RRA:MAX:0.5:1:5
+    rrdtool update myrrdfile.rdd N:1
+    rrdtool update myrrdfile.rdd N:2
+    rrdtool update myrrdfile.rdd N:3
+    rrdtool fetch myrrdfile.rdd MAX
+
+Often handy for cut-and-paste.
 
 =head1 SEE ALSO
 
-http://rrdtool.org
+Tobi Oetiker's RRDTool homepage at http://rrdtool.org
 
 =head1 AUTHOR
 
