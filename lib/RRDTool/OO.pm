@@ -420,7 +420,7 @@ C<RRDs> module to get access to I<rrdtool>'s shared library.
 C<RRDTool::OO> tries to marry I<rrdtool>'s database engine with the
 dwimminess and whipuptitude Perl programmers take for granted. Using
 C<RRDTool::OO> abstracts away implementation details of the RRD engine,
-uses easy to memorize named paramets and sets meaningful defaults 
+uses easy to memorize named parameters and sets meaningful defaults 
 for parameters not needed in simple cases.
 For the experienced user, however, it provides full access to
 I<rrdtool>'s API.
@@ -655,9 +655,36 @@ L<SYNOPSIS> section of this manual page and watch the output:
 
 Often handy for cut-and-paste.
 
+=head1 INSTALLATION
+
+C<RRDTool::OO> requires a I<rrdtool> installation with the
+C<RRDs> Perl module, that comes with the C<rrdtool> distribution.
+
+Download the tarball from
+
+    http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/pub/rrdtool.tar.gz
+
+and then unpack, compile and install:
+
+    tar zxfv rrdtool.tar.gz
+    cd rrdtool-1.0.46
+    make
+    cd perl-shared
+    perl Makefile.PL
+    ./configure
+    make
+    make test
+    make install
+
 =head1 SEE ALSO
 
-Tobi Oetiker's RRDTool homepage at http://rrdtool.org
+Tobi Oetiker's RRDTool homepage at 
+
+    http://rrdtool.org
+
+especially the manual page at 
+
+    http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/index.html
 
 =head1 AUTHOR
 
