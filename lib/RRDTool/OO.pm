@@ -903,13 +903,26 @@ and then unpack, compile and install:
 
 =head1 SEE ALSO
 
+=over 4
+
+=item *
+
 Tobi Oetiker's RRDTool homepage at 
 
     http://rrdtool.org
 
 especially the manual page at 
 
-    http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/index.html
+        http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/index.html
+
+=item *
+
+My articles on rrdtool in "Linux Magazin" (Germany) and "Linux Magazine" (UK):
+
+    http://www.linux-magazin.de/Artikel/ausgabe/2004/06/perl/perl.html
+    http://www.linux-magazine.com/issue/44/Limiting_Data.pdf (not online yet)
+
+=back
 
 =head1 AUTHOR
 
