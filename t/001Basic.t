@@ -4,6 +4,7 @@ use RRDTool::OO;
 
 use Log::Log4perl qw(:easy);
 #Log::Log4perl->easy_init({level => $INFO, layout => "%L: %m%n", 
+#                          category => 'rrdtool',
 #                          file => 'stdout'});
 
 my $rrd;
@@ -126,5 +127,25 @@ ok(! $rrd->update(value => 123, time => 123),
 $rrd->{raise_error} = 1;
 
 like($rrd->error_message(), qr/illegal attempt to update using time \d+ when last update time is \d+ \(minimum one second step\)/, "check error message");
+
+######################################################################
+# Ok update
+######################################################################
+ok($rrd->update(value => 123, time => 1080500000), 
+   "update with ok timestamp");
+
+######################################################################
+# Check what happens if the rrd is write-protected all of a sudden 
+######################################################################
+chmod 0444, "foo";
+eval {
+    $rrd->update(value => 123, time => 1080500100);
+};
+
+if($@) {
+    like($@, qr/Permission denied/, "update on write-protected rrd");
+} else {
+    ok(0, "update on write-protected rrd");
+}
 
 END { unlink('foo'); }
