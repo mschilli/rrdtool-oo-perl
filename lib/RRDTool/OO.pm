@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -1075,16 +1075,20 @@ on what each option is used for:
 
 =item I<$rrd-E<gt>dump()>
 
-I<Not available via C<RRDs> yet, but hopefully soon.>
+I<Available as of rrdtool 1.0.49>.
 
 Dumps the RRD in XML format to STDOUT. If you want to dump it into a file
 instead, do this:
 
-    unless (my $pid = open DUMP, "-|") {
+    my $pid;
+
+    unless ($pid = open DUMP, "-|") {
       die "Can't fork: $!" unless defined $pid;
       $rrd->dump();
       exit 0;
     }
+
+    waitpid($pid, 0);
 
     open OUT, ">out";
     print OUT $_ for <DUMP>;
@@ -1101,7 +1105,7 @@ Return the RRD's last update time.
 
 =item I<$rrd-E<gt>restore(xml => "file.xml")>
 
-I<Not available via C<RRDs> yet, but hopefully soon.>
+I<Available as of rrdtool 1.0.49>.
 
 Restore a RRD from a C<dump>. The C<xml> parameter specifies the name
 of the XML file containing the dump. If the optional flag C<range_check>
