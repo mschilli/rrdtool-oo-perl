@@ -3,6 +3,8 @@
     (ms) added support for dump() and restore(). Test cases in
          t/007Dump.t will wait until these functions are 
          available in rrdtool, and are skipped until then.
+    (ms) Some graph options don't have parameters, they can
+         specified via option_name => undef now.
 
 0.04 05/22/2004
     (ms) added more functionality to graph(), new test cases.

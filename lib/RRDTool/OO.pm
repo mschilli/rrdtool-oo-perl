@@ -404,8 +404,10 @@ sub add_dashes {
         (my $newname = $_) =~ s/_/-/g;
         if($assign_hashref->{$_}) {
             push @options, "--$newname=$options_hashref->{$_}";
-        } else {
+        } elsif(defined $options_hashref->{$_}) {
             push @options, "--$newname", $options_hashref->{$_};
+        } else {
+            push @options, "--$newname";
         }
     }
    
@@ -1022,6 +1024,13 @@ C<only_graph>,
 C<force_rules_legend>, 
 C<title>, 
 C<step>.
+
+Some options (e.g. C<alt_y_grid>) don't expect values, they need to
+be specified like
+
+    alt_y_grid => undef
+
+in order to be passed properly to RRDTool.
 
 Please check the RRDTool documentation for a detailed description
 on what each of them is used for:
