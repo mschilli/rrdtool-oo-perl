@@ -581,6 +581,67 @@ Gets the next row from the RRD iterator, initialized by a previous call
 to C<$rrd-E<gt>fetch_start()>. Returns the time of the archive point
 along with all values as a list.
 
+=item I<$rrd-E<gt>graph( ... )>
+
+If there's only one data source in the RRD, drawing nice graph in
+a image file on disk is as easy as
+
+    $rrd->graph(
+      file           => $image_file_name,
+      vertical_label => 'My Salary',
+      color          => 'FF0000', # (red)
+      draw           => { thickness => 2,
+                          color     => 'FF0000'},
+    );
+
+This will assume a start time of 24 hours before now and an
+end time of now. Specify C<start> and C<end> explicitely to
+be clear:
+
+    $rrd->graph(
+      file           => $image_file_name,
+      vertical_label => 'My Salary',
+      color          => 'FF0000', # (red)
+      start          => time() - 24*3600,
+      end            => time(),
+      draw           => { thickness => 2,
+                          color     => 'FF0000'},
+    );
+
+If there are multiple datasources in the RRD or multiple archives
+with different values for C<cfunc>, just specify explicitely which
+one to draw:
+
+    $rrd->graph(
+      file           => $image_file_name,
+      vertical_label => 'My Salary',
+      draw           => {
+        thickness        => 2,
+        color            => 'FF0000',
+        data_source_name => "load",
+        cfunc            => 'MAX'},
+    );
+
+And you can certainly have more than one graph in the picture:
+
+    $rrd->graph(
+      file           => $image_file_name,
+      vertical_label => 'My Salary',
+      draw           => {
+        thickness        => 2,
+        color            => 'FF0000', # red
+        data_source_name => "load",
+        cfunc            => 'MAX'},
+      draw           => {
+        thickness        => 2,
+        color            => '00FF00', # green
+        data_source_name => "load",
+        cfunc            => 'AVERAGE'},
+    );
+
+NOTE: C<graph()> is still under development, the interface displayed 
+above might change.
+
 =item I<$rrd-E<gt>error_message()>
 
 Return the message of the last error that occurred while interacting
@@ -592,7 +653,7 @@ with C<RRDTool::OO>.
 
 The following methods are not yet implemented:
 
-C<graph>,
+C<graph> (partially),
 C<dump>,
 C<restore>,
 C<tune>,
