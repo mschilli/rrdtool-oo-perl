@@ -31,3 +31,4 @@ my $cfuncs  = $rrd->meta_data("cfuncs");
 is("@$cfuncs", "MAX", "check cfunc");
 is("@$dsnames", "mydatasource", "check dsname");
 
+END { unlink "rrdtooltest.rrd";
