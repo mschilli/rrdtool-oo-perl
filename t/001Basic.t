@@ -3,8 +3,8 @@ use Test::More qw(no_plan);
 use RRDTool::OO;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level => $INFO, layout => "%L: %m%n", 
-                          file => 'stdout'});
+#Log::Log4perl->easy_init({level => $INFO, layout => "%L: %m%n", 
+#                          file => 'stdout'});
 
 my $rrd;
 
@@ -21,7 +21,8 @@ like($@, qr/Illegal parameter 'foobar' in new/, "new with illegal parameter");
 $rrd = RRDTool::OO->new( file => 'foo' );
 
 ######################################################################
-    # create missing everything
+# create missing everything
+######################################################################
 eval { $rrd->create(); };
 like($@, qr/Mandatory parameter/, "create missing everything");
 
@@ -48,49 +49,77 @@ eval { $rrd->create(
 
 like($@, qr/Mandatory parameter/, "create missing hearbeat");
 
-    # legal create
+######################################################################
+# Run the test example in
+# http://www.linux-magazin.de/Artikel/ausgabe/2004/06/perl/perl.html
+######################################################################
+
+my $start_time     = 1080460200;
+my $nof_iterations = 40;
+my $end_time       = $start_time + $nof_iterations * 60;
+
 my $rc = $rrd->create(
-    start     => time() - 3600,
-    step      => 10,
-    data_source => { name      => 'foobar',
+    start     => $start_time,
+    step      => 60,
+    data_source => { name      => 'load',
                      type      => 'GAUGE',
-                     heartbeat => 100,
+                     heartbeat => 90,
+                     min       => 0,
+                     max       => 10.0,
                    },
     archive     => { cf    => 'MAX',
                      xff   => '0.5',
                      steps => 1,
-                     rows  => 100,
+                     rows  => 5,
+                   },
+    archive     => { cf    => 'MAX',
+                     xff   => '0.5',
+                     steps => 5,
+                     rows  => 10,
                    },
 );
 
 is($rc, 1, "create ok");
 ok(-f "foo", "RRD exists");
 
-######################################################################
-# Check updates
-######################################################################
+for(0..$nof_iterations) {
+    my $time = $start_time + $_ * 60;
+    my $value = 2 + $_ * 0.1;
 
-my $items_in = 0;
-
-for(my $i=400; $i >= 0; $i -= 20) {
-    $items_in++;
-    my $time  = time() - $i;
-    my $value = 1000 + $i;
-    $rrd->update(value => $value, time => $time);
+    $rrd->update(time => $time, value => $value);
 }
 
-$rrd->fetch_start(start => time() - 500, cf => 'MAX');
+    # short-term archive
+my @expected = qw(1080462360:5.6 1080462420:5.7 1080462480:5.8
+                  1080462540:5.9 1080462600:6);
+
+$rrd->fetch_start(start => $end_time - 5*60, cf => 'MAX');
 $rrd->fetch_skip_undef();
 my $count = 0;
 while(my($time, $val) = $rrd->fetch_next()) {
+    last unless defined $val;
+    is("$time:$val", shift @expected, "match expected value");
     $count++;
 }
-is($count, 11, "11 items found ($items_in in)");
+is($count, 5, "items found");
+
+    # long-term archive
+@expected = qw(1080460800:3 1080461100:3.5 1080461400:4 1080461700:4.5 1080462000:5 1080462300:5.5 1080462600:6);
+
+$rrd->fetch_start(start => $end_time - 30*60, cf => 'MAX');
+$rrd->fetch_skip_undef();
+$count = 0;
+while(my($time, $val) = $rrd->fetch_next()) {
+    last unless defined $val;
+    is("$time:$val", shift @expected, "match expected value");
+    $count++;
+}
+is($count, 7, "items found");
 
 ######################################################################
 # Failed update: time went backwards
 ######################################################################
-ok(! $rrd->update(value => 123, time => time()), 
+ok(! $rrd->update(value => 123, time => 123), 
    "update with expired timestamp");
 
 like($rrd->error_message(), qr/illegal attempt to update using time \d+ when last update time is \d+ \(minimum one second step\)/, "check error message");
