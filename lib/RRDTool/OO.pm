@@ -37,6 +37,7 @@ our $OPTIONS = {
                                      overlay unit lazy upper_limit lower_limit
                                      logarithmic color no_legend only_graph
                                      force_rules_legend title step draw
+                                     print gprint
                                     )],
                     draw      => {
                       mandatory => [qw()],
@@ -47,6 +48,14 @@ our $OPTIONS = {
                       mandatory => [qw()],
                       optional  => [qw(back canvas shadea shadeb
                                        grid mgrid font frame arrow)],
+                    },
+                    print      => {
+                      mandatory => [qw()],
+                      optional  => [qw(draw format cfunc)],
+                    },
+                    gprint     => {
+                      mandatory => [qw()],
+                      optional  => [qw(draw format cfunc)],
                     },
                   },
     fetch_start=> { mandatory => [qw()],
@@ -434,9 +443,12 @@ sub graph {
 
     my @trailing_options = ();
 
+    my $vname_default;
+
     check_options "graph", \@options;
 
     my @colors = ();
+    my @prints = ();
 
     my @draws = ();
     my %options_hash = @options;
@@ -454,10 +466,18 @@ sub graph {
                 push @colors, "--color", 
                               uc($_) . "$options[$i+1]->{$_}";
             }
+        } elsif($options[$i] eq "print") {
+            check_options "graph/print", [%{$options[$i+1]}];
+                push @prints, [$options[$i], $options[$i+1]];
+        } elsif($options[$i] eq "gprint") {
+            check_options "graph/gprint", [%{$options[$i+1]}];
+                push @prints, [$options[$i], $options[$i+1]];
         }
     }
 
     delete $options_hash{color};
+    delete $options_hash{print};
+    delete $options_hash{gprint};
 
     @options = add_dashes(\%options_hash);
 
@@ -502,6 +522,9 @@ sub graph {
             $_->{name} = "draw$draw_count";
         }
 
+            # Set default var name
+        $vname_default ||= $_->{name};
+
             # Is it just a CDEF, a different view of a another draw?
         if($_->{cdef}) {
             push @options, "CDEF:$_->{name}=$_->{cdef}";
@@ -540,6 +563,17 @@ sub graph {
         $draw_count++;
     }
 
+        # Push all prints and gprints
+    for(@prints) {
+        $_->[1]->{draw}   ||= $draws[0]->{name};
+        $_->[1]->{cfunc}  ||= "AVERAGE";
+        $_->[1]->{format} ||= "Average=%lf";
+        push @options, uc($_->[0]) . ":" .
+                       $_->[1]->{draw} . ":" .
+                       $_->[1]->{cfunc} . ":" .
+                       $_->[1]->{format};
+    }
+    
     push @options, @colors;
     unshift @options, $image;
 
@@ -1193,6 +1227,32 @@ Please check the RRDTool documentation for a detailed description
 on what each option is used for:
 
     http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/rrdgraph.html
+
+Sometimes it's useful to print max, min or average values of
+a given graph at the bottom of the chart or to STDOUT. That's what
+C<gprint> and C<print> options are for. In addition to the C<draw>
+name (defaults to the first draw), a consolidation function can
+be specified: MIN, MAX, AVERAGE, LAST (defaults to AVERAGE). Note
+that this is unrelated to the data source's consolidation function,
+it's just applied on the graph print/gprint refer to. Finally, the
+C<format> parameter gives a printf-like template (defaults to 
+"Average=%lf": A call to
+
+    $rrd->graph(
+      image          => $image_file_name,
+      draw           => {
+        name      => "first_draw",
+        dsname    => "load",
+        cfunc     => 'MAX'},
+      gprint         => {
+        draw      => 'first_draw',
+        cfunc     => 'AVERAGE',
+        format    => 'Average=%lf',
+      },
+    );
+
+prints "Average=x.xx" at the bottom of the graph, showing what the
+average value of the graph is.
 
 =item I<$rrd-E<gt>dump()>
 

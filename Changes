@@ -5,6 +5,7 @@
          'cdef' calculations. Since leaving 'type' out will have
          RRDTool::OO default to 'line', type => 'hidden' is used to
          indicate the graph shouldn't be drawn. 
+    (ms) Added gprint/print options for graphs
 
 0.10 (11/20/2004)
     (ms) Added legends to graph()

@@ -9,6 +9,7 @@ use warnings;
 
 use RRDTool::OO;
 use Log::Log4perl qw(:easy);
+Log::Log4perl->easy_init($DEBUG);
 
 my $DB  = "example.rrd";
 my $IMG = "example.png";
@@ -63,6 +64,7 @@ $rrd->graph(
                       },
         # First graph
     draw           => {
+        name      => 'some_stupid_draw',
         type      => "area",
         color     => '0000ff',
         legend    => 'first legend',
@@ -74,6 +76,12 @@ $rrd->graph(
         color     => '00ff00',
         dsname    => 'load2',
         legend    => 'second legend',
+    },
+
+    gprint        => {
+        draw      => 'some_stupid_draw',
+        format    => 'avg=%lf',
+        #cfunc     => 'MIN',
     },
 );
 

@@ -310,5 +310,27 @@ view("mygraph.png");
 ok(-f "mygraph.png", "Image exists");
 unlink "mygraph.png";
 
+######################################################################
+# Test gprint
+######################################################################
+    $rrd->graph(
+      image          => "mygraph.png",
+      vertical_label => 'My Salary',
+      start          => $start_time,
+      end            => $start_time + $nof_iterations * 60,
+      draw           => {
+        type      => 'line',
+        color     => 'FF0000', # red line
+        name      => 'firstgraph',
+        legend    => 'Unmodified Load',
+      },
+      gprint         => {
+      },
+    );
+
+view("mygraph.png");
+ok(-f "mygraph.png", "Image exists");
+unlink "mygraph.png";
+
 unlink("foo");
 unlink("bar");
