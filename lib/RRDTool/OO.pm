@@ -53,11 +53,12 @@ our $OPTIONS = {
     dump       => { mandatory => [],
                     optional  => [],
                   },
-    restore    => { mandatory => [],
-                    optional  => [],
+    restore    => { mandatory => [qw(xml)],
+                    optional  => [qw(range_check)],
                   },
     tune       => { mandatory => [],
-                    optional  => [],
+                    optional  => [qw(heartbeat minimum maximum 
+                                     type name)],
                   },
     last       => { mandatory => [],
                     optional  => [],
@@ -77,11 +78,19 @@ our $OPTIONS = {
 };
 
 my %RRDs_functions = (
-    create => \&RRDs::create,
-    fetch  => \&RRDs::fetch,
-    update => \&RRDs::update,
-    graph  => \&RRDs::graph,
-    info   => \&RRDs::info,
+    create    => \&RRDs::create,
+    fetch     => \&RRDs::fetch,
+    update    => \&RRDs::update,
+    graph     => \&RRDs::graph,
+    info      => \&RRDs::info,
+    dump      => \&RRDs::dump,
+    restore   => \&RRDs::restore,
+    tune      => \&RRDs::tune,
+    last      => \&RRDs::last,
+    info      => \&RRDs::info,
+    rrdresize => \&RRDs::rrdresize,
+    xport     => \&RRDs::xport,
+    rrdcgi    => \&RRDs::rrdcgi,
 );
 
 #################################################
@@ -500,6 +509,63 @@ sub graph {
 }
 
 #################################################
+sub dump {
+#################################################
+    my($self, @options) = @_;
+
+    $self->RRDs_execute("dump", $self->{file}, @options);
+}
+
+#################################################
+sub restore {
+#################################################
+    my($self, @options) = @_;
+
+    my %options_hash = @options;
+    delete $options_hash{xml};
+
+    @options = add_dashes(\%options_hash);
+
+    $self->RRDs_execute("restore", $options_hash{xml}, $self->{file}, 
+                        @options);
+}
+
+#################################################
+sub tune {
+#################################################
+    my($self, @options) = @_;
+
+    my %options_hash = @options;
+
+    my $dsname = first_def $options_hash{dsname}, $self->default("dsname");
+    delete $options_hash{dsname};
+
+    @options = ();
+
+    my %map = qw( type data-source-type
+                  name data-source-rename
+                );
+
+    for my $param (qw(heartbeat minimum maximum type name)) {
+        if(exists $options_hash{$param}) {
+            my $newparam = $param;
+    
+            $newparam = $map{$param} if exists $map{$param};
+    
+            push @options, "--$newparam", 
+                 "$dsname:$options_hash{$param}";
+        }
+    }
+
+    my $rc = $self->RRDs_execute("tune", $self->{file}, @options);
+
+    # This might impact the default dsname, rediscover
+    $self->meta_data_discover();
+
+    return $rc;
+}
+
+#################################################
 sub default {
 #################################################
     my($self, $param) = @_;
@@ -572,6 +638,9 @@ sub meta_data_discover {
     #rra[0].cdp_prep[0].value = NaN
     #rra[0].cdp_prep[0].unknown_datapoints = 0
 
+        # Nuke everything
+    delete $self->{meta};
+
     my $hashref = $self->RRDs_execute("info", $self->{file});
 
     foreach my $key (keys %$hashref){
@@ -593,6 +662,22 @@ sub meta_data_discover {
                     "dsnames=(@{$self->{meta}->{dsnames}})";
 
     $self->{meta}->{discovered} = 1;
+}
+
+#################################################
+sub info {
+#################################################
+    my($self) = @_;
+
+    my $hashref = $self->RRDs_execute("info", $self->{file});
+}
+
+#################################################
+sub last {
+#################################################
+    my($self) = @_;
+
+    $self->RRDs_execute("last", $self->{file});
 }
 
 1;
@@ -933,6 +1018,51 @@ on what each of them is used for:
 
     http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/rrdgraph.html
 
+=item I<$rrd-E<gt>dump()>
+
+I<Not implemented, because it's not available via C<RRDs>. Once it is,
+it will be available via C<RRDTool> automatically.>
+
+=item I<my $hashref = $rrd-E<gt>info()>
+
+Grabs the RRD's meta data and returns it as a hashref, holding a
+map of parameter names and their values.
+
+=item I<my $time = $rrd-E<gt>last()>
+
+Return the RRD's last update time.
+
+=item I<$rrd-E<gt>restore(xml => "file.xml")>
+
+I<Not implemented, because it's not available via C<RRDs>. Once it is,
+it will be available via C<RRDTool> automatically.>
+
+Restore a RRD from a C<dump>. The C<xml> parameter specifies the name
+of the XML file containing the dump. If the optional flag C<range_check>
+is set to a true value, C<restore> will make sure the values in the 
+RRAs do not exceed the limits defined for the different datasources:
+
+    $rrd->restore(xml => "file.xml", range_check => 1);
+
+=item I<$rrd-E<gt>tune( ... )>
+
+Alter a RRD's data source configuration values:
+
+        # Set the heartbeat of the RRD's only datasource to 100
+    $rrd->tune(heartbeat => 100);
+
+        # Set the minimum of DS 'load' to 1
+    $rrd->tune(dsname => 'load', minimum => 1);
+
+        # Set the maximum of DS 'load' to 10
+    $rrd->tune(dsname => 'load', maximum => 10);
+
+        # Set the type of DS 'load' to AVERAGE
+    $rrd->tune(dsname => 'load', type => 'AVERAGE');
+
+        # Set the name of DS 'load' to 'load2'
+    $rrd->tune(dsname => 'load', name => 'load2');
+
 =item I<$rrd-E<gt>error_message()>
 
 Return the message of the last error that occurred while interacting
@@ -944,12 +1074,9 @@ with C<RRDTool::OO>.
 
 The following methods are not yet implemented:
 
-C<graph> (partially),
 C<dump>,
 C<restore>,
-C<tune>,
 C<last>,
-C<info>,
 C<rrdresize>,
 C<xport>,
 C<rrdcgi>.

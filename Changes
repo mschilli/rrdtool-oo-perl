@@ -1,8 +1,11 @@
 
-0.04 (not yet released)
+0.04 05/22/2004
     (ms) added more functionality to graph(), new test cases.
     (ms) if a graph contains several files, use the defaults
          from each file
+    (ms) added tune(), info(), last().
+         dump()/restore() added also, but not activated yet, 
+         because not available via RRDs.
 
 0.03 05/18/2004
     (ms) fixed discovery of CFs
@@ -16,4 +19,7 @@
 
 TODO:
 
+* Why doesn't RRDs offer dump()/restore() methods?
+* some less frequently used graph parameters like CDEF, PRINT, x-grid
+  aren't integrated yet or could be integrated more OO-like.
 * fetch_start/next iterator with saved timestamp, without caching all values
