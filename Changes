@@ -6,6 +6,7 @@
     (ms) Some graph options don't have parameters, they can
          specified via option_name => undef now.
     (ms) Added lower_limit graph option
+    (ms) Added eg/graph.pl as a graph example
 
 0.04 05/22/2004
     (ms) added more functionality to graph(), new test cases.
