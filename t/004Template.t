@@ -59,3 +59,5 @@ while(my($time, @val) = $rrd->fetch_next()) {
     $count++;
 }
 is($count, 10, "10 items found");
+
+END { unlink "rrdtooltest.rrd"; }

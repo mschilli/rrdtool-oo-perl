@@ -1,6 +1,7 @@
 
 0.03 05/18/2004
-    (ms) fixed bug with discovery of CFs
+    (ms) fixed discovery of CFs
+    (ms) fixed update with values/hash and added test case
 
 0.02 05/16/2004
     (ms) used rrdtool info for meta queries
@@ -10,5 +11,4 @@
 
 TODO:
 
-* Extra test case file for mult values
 * fetch_start/next iterator with saved timestamp, without caching all values
