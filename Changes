@@ -1,0 +1,8 @@
+0.01 05/12/2004
+    (ms) Where it all began.
+
+Fragen:
+
+* Koennen pro Datenpunkt mehrere Werte stehen? Wenn nicht, warum liefert
+  dann fetch() fuer jeden Archivpunkt eine Liste von Werten?
+
