@@ -1,6 +1,9 @@
 Changes
+lib/RRDTool/OO.pm
 Makefile.PL
 MANIFEST
+MANIFEST.SKIP
+META.yml			Module meta-data (added by MakeMaker)
 README
 t/001Basic.t
-lib/RRDTool/OO.pm
+t/002Pod.t

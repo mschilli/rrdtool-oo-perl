@@ -1,16 +1,10 @@
-TODO:
-
-* Update with mult values
-* Update with hash/template
-* fetch_skip if all values are undef
-* Fetch with mult values
-* fetch_start/next iterator with saved timestamp, without caching all values
-* graph
-* Test: rrd write-protected
-* Error handling: die or return undef?
-* Extra test case file for mult values
-* Makefile.PL: Stop with message/url if RRDs not installed.
-* xff optional
 
 0.01 05/12/2004
     (ms) Where it all began.
+
+TODO:
+
+* add graph method
+* fetch_start/next iterator with saved timestamp, without caching all values
+* Test: rrd write-protected
+* Extra test case file for mult values
