@@ -43,6 +43,11 @@ our $OPTIONS = {
                       optional  => [qw(file dsname cfunc thickness 
                                        type color)],
                     },
+                    color     => {
+                      mandatory => [qw()],
+                      optional  => [qw(back canvas shadea shadeb
+                                       grid mgrid font frame arrow)],
+                    },
                   },
     fetch_start=> { mandatory => [qw()],
                     optional  => [qw(cfunc start end resolution)],
@@ -429,6 +434,8 @@ sub graph {
 
     check_options "graph", \@options;
 
+    my @colors = ();
+
     my @draws = ();
     my %options_hash = @options;
     my $draw_count   = 1;
@@ -439,8 +446,16 @@ sub graph {
     for(my $i=0; $i < @options; $i += 2) {
         if($options[$i] eq "draw") {
             push @draws, $options[$i+1];
+        } elsif($options[$i] eq "color") {
+            check_options "graph/color", [%{$options[$i+1]}];
+            for(keys %{$options[$i+1]}) {
+                push @colors, "--color", 
+                              uc($_) . "$options[$i+1]->{$_}";
+            }
         }
     }
+
+    delete $options_hash{color};
 
     @options = add_dashes(\%options_hash);
 
@@ -505,6 +520,7 @@ sub graph {
         $draw_count++;
     }
 
+    push @options, @colors;
     unshift @options, $image;
 
     $self->RRDs_execute("graph", @options);
@@ -1033,8 +1049,27 @@ be specified like
 
 in order to be passed properly to RRDTool.
 
+The C<color> option expects a reference to a hash with various settings
+for the different graph areas:
+C<back> (background), 
+C<canvas>, 
+C<shadea> (left/top border), 
+C<shadeb> (right/bottom border), 
+C<grid>, C<mgrid> major grid, 
+C<font>, 
+C<frame> and C<arrow>:
+
+    $rrd->graph(
+      ...
+      color          => { back   => '#0e0e0e',
+                          arrow  => '#ff0000',
+                          canvas => '#eebbbb',
+                        },
+      ...
+    );
+
 Please check the RRDTool documentation for a detailed description
-on what each of them is used for:
+on what each option is used for:
 
     http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/rrdgraph.html
 

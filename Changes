@@ -1,6 +1,9 @@
 
 0.06 (06/21/2004)
     (ms) added 'start' param in create() docs
+    (ms) JJ Knitis <jj@dangercreative.com> provided a fix for
+         multiple 'color' settings in graph. Added new graph/color
+         syntax.
 
 0.05 (05/26/2004)
     (ms) added support for dump() and restore(). Test cases in
