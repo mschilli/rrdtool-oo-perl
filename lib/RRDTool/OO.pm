@@ -644,7 +644,7 @@ category C<"rrdtool">:
 
 This will display all C<rrdtool> commands that C<RRDTool::OO> submits
 to the shared library. Let's turn it on for the code snippet in the
-L<SYNOPSIS> section of this manual page and watch the output:
+SYNOPSIS section of this manual page and watch the output:
 
     rrdtool create myrrdfile.rdd --step 1 \
             DS:mydatasource:GAUGE:2:U:U RRA:MAX:0.5:1:5
