@@ -38,7 +38,7 @@ WriteMakefile(
     VERSION_FROM      => 'lib/RRDTool/OO.pm', # finds $VERSION
     PREREQ_PM         => {
                          Log::Log4perl => '0.40',
-                         RRDs          => undef,
+                         RRDs          => 0,
                          }, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/RRDTool/OO.pm', # retrieve abstract from module
