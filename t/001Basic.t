@@ -40,10 +40,10 @@ eval { $rrd->create(
                      type      => 'foo',
                      # heartbeat => 10,
                    },
-    archive     => { cf    => 'abc',
-                     xff   => '0.5',
-                     steps => 5,
-                     rows  => 10,
+    archive     => { cfunc   => 'abc',
+                     xff     => '0.5',
+                     cpoints => 5,
+                     rows    => 10,
                    },
 ) };
 
@@ -59,7 +59,7 @@ my $nof_iterations = 40;
 my $end_time       = $start_time + $nof_iterations * 60;
 
 my $rc = $rrd->create(
-    start     => $start_time,
+    start     => $start_time - 10,
     step      => 60,
     data_source => { name      => 'load',
                      type      => 'GAUGE',
@@ -67,15 +67,15 @@ my $rc = $rrd->create(
                      min       => 0,
                      max       => 10.0,
                    },
-    archive     => { cf    => 'MAX',
-                     xff   => '0.5',
-                     steps => 1,
-                     rows  => 5,
+    archive     => { cfunc    => 'MAX',
+                     xff      => '0.5',
+                     cpoints  => 1,
+                     rows     => 5,
                    },
-    archive     => { cf    => 'MAX',
-                     xff   => '0.5',
-                     steps => 5,
-                     rows  => 10,
+    archive     => { cfunc    => 'MAX',
+                     xff      => '0.5',
+                     cpoints  => 5,
+                     rows     => 10,
                    },
 );
 
@@ -93,7 +93,7 @@ for(0..$nof_iterations) {
 my @expected = qw(1080462360:5.6 1080462420:5.7 1080462480:5.8
                   1080462540:5.9 1080462600:6);
 
-$rrd->fetch_start(start => $end_time - 5*60, cf => 'MAX');
+$rrd->fetch_start(start => $end_time - 5*60, cfunc => 'MAX');
 $rrd->fetch_skip_undef();
 my $count = 0;
 while(my($time, $val) = $rrd->fetch_next()) {
@@ -106,7 +106,7 @@ is($count, 5, "items found");
     # long-term archive
 @expected = qw(1080460800:3 1080461100:3.5 1080461400:4 1080461700:4.5 1080462000:5 1080462300:5.5 1080462600:6);
 
-$rrd->fetch_start(start => $end_time - 30*60, cf => 'MAX');
+$rrd->fetch_start(start => $end_time - 30*60, cfunc => 'MAX');
 $rrd->fetch_skip_undef();
 $count = 0;
 while(my($time, $val) = $rrd->fetch_next()) {
@@ -119,8 +119,10 @@ is($count, 7, "items found");
 ######################################################################
 # Failed update: time went backwards
 ######################################################################
+$rrd->{raise_error} = 0;
 ok(! $rrd->update(value => 123, time => 123), 
    "update with expired timestamp");
+$rrd->{raise_error} = 1;
 
 like($rrd->error_message(), qr/illegal attempt to update using time \d+ when last update time is \d+ \(minimum one second step\)/, "check error message");
 

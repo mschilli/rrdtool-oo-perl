@@ -21,8 +21,8 @@ our $OPTIONS = {
                       optional  => [qw(min max)],
                     },
                     archive     => {
-                      mandatory => [qw(cf xff steps rows)],
-                      optional  => [],
+                      mandatory => [qw(rows)],
+                      optional  => [qw(cfunc cpoints xff)],
                     },
                   },
     update     => { mandatory => [qw(value)],
@@ -31,8 +31,8 @@ our $OPTIONS = {
     graph      => { mandatory => [],
                     optional  => [],
                   },
-    fetch_start=> { mandatory => [qw(cf)],
-                    optional  => [qw(start end)],
+    fetch_start=> { mandatory => [qw()],
+                    optional  => [qw(cfunc start end resolution)],
                   },
     fetch_next => { mandatory => [],
                     optional  => [],
@@ -111,7 +111,8 @@ sub new {
     check_options "new", [%options];
 
     my $self = {
-        file => $options{file},
+        raise_error => 1,
+        file        => $options{file},
     };
 
     bless $self, $class;
@@ -159,21 +160,81 @@ sub create {
            (defined $_->{max} ? $_->{max} : "U");
     }
 
+    $self->{archive_cfuncs} = [];
+    my %cfuncs = ();
+
     for(@archives) {
        # RRA:CF:xff:steps:rows
        DEBUG "archive: @{[%$_]}";
+       if(! exists $_->{xff}) {
+           $_->{xff} = 0.5;
+       }
+
+       $_->{cpoints} ||= 1;
+
+       if($_->{cpoints} > 1 and
+          !exists $_->{cfunc}) {
+           LOGDIE "Must specify cfunc if cpoints > 1";
+       }
+       if(! exists $_->{cfunc}) {
+           $_->{cfunc} = 'MAX';
+       }
+       push @{$self->{archive_cfuncs}}, $_->{cfunc} unless 
+           $cfuncs{$_->{cfunc}}++;
+
        push @rrdtool_options, 
-           "RRA:$_->{cf}:$_->{xff}:$_->{steps}:$_->{rows}";
+           "RRA:$_->{cfunc}:$_->{xff}:$_->{cpoints}:$_->{rows}";
     }
 
-    INFO "rrdtool create @rrdtool_options";
-    RRDs::create(@rrdtool_options);
+    $self->RRDs_execute("create", @rrdtool_options);
+}
+
+my %RRDs_functions = (
+    create => \&RRDs::create,
+    fetch  => \&RRDs::fetch,
+    update => \&RRDs::update,
+);
+    
+#################################################
+sub RRDs_execute {
+#################################################
+    my ($self, $command, @args) = @_;
+
+    INFO "rrdtool $command @args";
+
+    my @rc;
+    my $error;
+
+    if(wantarray) {
+        @rc = $RRDs_functions{$command}->(@args);
+        INFO "rrdtool rc=(", array_as_string(\@rc), ")";
+        $error = 1 unless defined $rc[0];
+    } else {
+        $rc[0] = $RRDs_functions{$command}->(@args);
+        INFO "rrdtool rc=(", array_as_string(\@rc), ")";
+        $error = 1 unless $rc[0];
+    }
+
+    if($error) {
+        LOGDIE "rrdtool $command @args failed: ", $self->error_message() if
+            $self->{raise_error};
+    }
+
+        # Important to return no array in scalar context.
+    if(wantarray) {
+        return @rc;
+    } else {
+        return $rc[0];
+    }
 }
 
 #################################################
 sub update {
 #################################################
     my($self, @options) = @_;
+
+        # Expand short form
+    @options = (value => $options[0]) if @options == 1;
 
     check_options "update", \@options;
 
@@ -199,9 +260,8 @@ sub update {
         $update_string .= $options_hash{value};
     }
 
-    INFO "rrdtool update $self->{file} @update_options $update_string";
-
-    RRDs::update($self->{file}, @update_options, $update_string);
+    $self->RRDs_execute("update", $self->{file}, 
+                        @update_options, $update_string);
 }
 
 #################################################
@@ -213,21 +273,25 @@ sub fetch_start {
 
     my %options_hash = @options;
 
-    my $cf = $options_hash{cf};
-    delete $options_hash{cf};
+    if(!exists $options_hash{cfunc}) {
+        LOGDIE "No default archive cfunc" unless 
+            defined $self->{archive_cfuncs}->[0];
+        $options_hash{cfunc} = $self->{archive_cfuncs}->[0];
+        DEBUG "Getting default cfunc '$options_hash{cfunc}'";
+    }
+
+    my $cfunc = $options_hash{cfunc};
+    delete $options_hash{cfunc};
 
     @options = add_dashes(\%options_hash);
 
-    DEBUG "rrdtool fetch_start $self->{file} $cf @options";
+    INFO "rrdtool fetch $self->{file} $cfunc @options";
 
     ($self->{fetch_time_current}, 
      $self->{fetch_time_step},
      $self->{fetch_ds_names},
-     $self->{fetch_data}) = RRDs::fetch($self->{file}, $cf, @options);
-
-    unless(defined $self->{fetch_time_current}) {
-        LOGDIE "RRDs::fetch $self->{file}, $cf, @options failed";
-    }
+     $self->{fetch_data}) =
+         $self->RRDs_execute("fetch", $self->{file}, $cfunc, @options);
 
     $self->{fetch_idx} = 0;
 }
@@ -315,19 +379,17 @@ RRDTool::OO - Object-oriented interface to RRDTool
 =head1 SYNOPSIS
 
         # Constructor
-    my $rrd = RRDTool::OO->new( file => $file );
+    my $rrd = RRDTool::OO->new( file => "myrrdfile.rdd" );
 
         # Create a round-robin database
     $rrd->create(
-         data_source => { name => $ds_name },
-         archive     => { name         => $arch_name,
-                          con_function => 'MAX',
-                          max_points   => 5,
-                          con_points   => 1 });
+         data_source => { name => "mydatasource",
+                          type => "GAUGE" },
+         archive     => { rows => 5 });
 
-        # Update RRD with a sample value
-    $rrd->update($value) or 
-        warn "Update failed: ", $rrd->error_message();
+        # Update RRD with a sample value, 
+        # use current time.
+    $rrd->update(42);
 
         # Start fetching values from one day back, 
         # but skip undef'd ones first
@@ -363,16 +425,45 @@ data sources and one or more archives:
 
     $rrd->create(
          data_source => { name => $ds_name }
-         archive     => { name         => $arch_name,
-                          con_function => 'MAX',
-                          max_points   => 5,
-                          con_points   => 1 });
+         archive     => { name      => $arch_name,
+                          rows      => 5,
+                        });
 
-=item I<$rrd-E<gt>update([time =E<gt> $time,] value =E<gt> $value) >
+This defines an archive with a 1:1 mapping between primary data 
+points and archive points. 
+If you want
+to combine several primary data points into one archive point, specify
+values for 
+C<cpoints> (the number of points to combine) and C<cfunc> 
+(the consolidation function) explicitely:
+
+    $rrd->create(
+         data_source => { name => $ds_name }
+         archive     => { name      => $arch_name,
+                          rows      => 5,
+                          cpoints   => 10,
+                          cfunc     => 'AVERAGE',
+                        });
+
+This will collect 10 data points to form one archive point, using
+the calculated average. 
+Other options for C<cfunc> are 
+C<MIN>, C<MAX>, and C<LAST>.
+
+=item I<$rrd-E<gt>update( ... ) >
 
 Update the round robin database with a value and an optional time stamp.
-If the timestamp is omitted, C<RRDTool::OO> will supply C<U> for C<rrdtool>,
-indicating that the current time should be used.
+If called with a single parameter, like in
+
+    $rrd->update($value);
+
+then the current timestamp and the defined C<$value> are used. If C<update>
+is called with a named parameter list like in
+
+    $rrd->update(time => $time, value => $value);
+
+then the given timestamp C<$time> is used along with the given value 
+C<$value>.
 
 When updating multiple data sources, use the C<values> parameter
 instead of C<value> and pass an arrayref:
@@ -389,10 +480,34 @@ names to values:
 C<RRDTool::OO> will transform this automagically
 into C<RRDTool's> I<template> syntax.
 
-=item I<$rrd-E<gt>fetch_start(con_function =E<gt> $con_function, ... )>
+=item I<$rrd-E<gt>fetch_start( ... )>
 
-Initializes the iterator to fetch data from the RRD. Currently, this
-fetches all values from the RRA and caches them in memory. I might
+Initializes the iterator to fetch data from the RRD. This works nicely without
+any parameters if
+your archives are using a single consolidation function (e.g. C<MAX>).
+If there's several archives in the RRD using different consolidation
+functions, you have to specify the one you want:
+
+    $rrd->fetch_start(cfunc => "MAX",
+                      start => time()-10*60
+                     );
+
+Other options for C<cfunc> are C<MIN>, C<AVERAGE>, and C<LAST>.
+
+If the C<start>
+time parameter is omitted, the fetch starts 24 hours before the end of the 
+archive. Also, an C<end> time can be specified:
+
+    $rrd->fetch_start(start => time()-10*60,
+                      end   => time());
+
+Another optional parameter is C<resolution> (seconds per value). 
+It defaults to the highest
+one available. See the C<rrdtool fetch> manual page for details.
+
+The current implementation
+fetches all values from the RRA in one swoop 
+and caches them in memory. I might
 change this behaviour to cache only the last timestamp and keep fetching.
 
 =item I<$rrd-E<gt>fetch_skip_undef()>
@@ -424,6 +539,23 @@ C<info>,
 C<rrdresize>,
 C<xport>,
 C<rrdcgi>.
+
+=head2 Error Handling
+
+By default, C<RRDTool::OO>'s methods will throw fatal errors (as in: 
+they're calling C<die()>) if the underlying C<RRDs::*> commands indicate
+failure.
+
+This behaviour can be overridden by calling the constructor with
+the C<raise_error> flag set to false:
+
+    my $rrd = RRDTool::OO->new(
+        file        => "myrrdfile.rdd",
+        raise_error => 0,
+    );
+
+In this mode, RRDTool's methods will just pass back values returned
+from the underlying C<RRDs> functions if an error happens.
 
 =head1 SEE ALSO
 

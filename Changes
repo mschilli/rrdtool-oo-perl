@@ -10,6 +10,7 @@ TODO:
 * Error handling: die or return undef?
 * Extra test case file for mult values
 * Makefile.PL: Stop with message/url if RRDs not installed.
+* xff optional
 
 0.01 05/12/2004
     (ms) Where it all began.
