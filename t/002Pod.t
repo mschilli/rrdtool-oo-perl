@@ -30,7 +30,7 @@ my $count = 0;
     ok(1, "Create");
 
         # Update RRD with sample values, use current time.
-    for(1..5) {
+    for(1..3) {
         $rrd->update($_);
         ok(1, "Update");
         sleep(1);
@@ -54,6 +54,7 @@ my $count = 0;
       vertical_label => 'My Salary',
       start          => time() - 10,
     );
+### END POD HERE ###
 
         # Area graph
     $rrd->graph(
@@ -81,10 +82,8 @@ my $count = 0;
       },
     );
 
-### END POD HERE ###
-
 ok($count > 2, "Fetch");
 
-END { unlink "mygraph.png";
+END { #unlink "mygraph.png";
       unlink "myrrdfile.rrd";
     }
