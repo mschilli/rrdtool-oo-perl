@@ -34,6 +34,13 @@ SYNOPSIS
                    defined $value ? $value : "[undef]", "\n";
         }
 
+            # Draw a graph in a PNG image
+        $rrd->graph(
+          file           => "mygraph.png",
+          vertical_label => 'My Salary',
+          start          => time() - 10,
+        );
+
 DESCRIPTION
     "RRDTool::OO" is an object-oriented interface to Tobi Oetiker's round
     robin database tool *rrdtool*. It uses *rrdtool*'s "RRDs" module to get
@@ -187,6 +194,64 @@ DESCRIPTION
         call to "$rrd->fetch_start()". Returns the time of the archive point
         along with all values as a list.
 
+    *$rrd->graph( ... )*
+        If there's only one data source in the RRD, drawing nice graph in an
+        image file on disk is as easy as
+
+            $rrd->graph(
+              file           => $image_file_name,
+              vertical_label => 'My Salary',
+              draw           => { thickness => 2,
+                                  color     => 'FF0000'},
+            );
+
+        This will assume a start time of 24 hours before now and an end time
+        of now. Specify "start" and "end" explicitely to be clear:
+
+            $rrd->graph(
+              file           => $image_file_name,
+              vertical_label => 'My Salary',
+              color          => 'FF0000', # (red)
+              start          => time() - 24*3600,
+              end            => time(),
+              draw           => { thickness => 2,
+                                  color     => 'FF0000'},
+            );
+
+        If there are multiple datasources in the RRD or multiple archives
+        with different values for "cfunc", just specify explicitely which
+        one to draw:
+
+            $rrd->graph(
+              file           => $image_file_name,
+              vertical_label => 'My Salary',
+              draw           => {
+                thickness => 2,
+                color     => 'FF0000',
+                dsname    => "load",
+                cfunc     => 'MAX'},
+            );
+
+        And you can certainly have more than one graph in the picture:
+
+            $rrd->graph(
+              file           => $image_file_name,
+              vertical_label => 'My Salary',
+              draw           => {
+                thickness => 2,
+                color     => 'FF0000', # red
+                dsname    => "load",
+                cfunc     => 'MAX'},
+              draw        => {
+                thickness => 2,
+                color     => '00FF00', # green
+                dsname    => "load",
+                cfunc     => 'AVERAGE'},
+            );
+
+        NOTE: "graph()" is still under development, the interface displayed
+        above might change.
+
     *$rrd->error_message()*
         Return the message of the last error that occurred while interacting
         with "RRDTool::OO".
@@ -194,8 +259,8 @@ DESCRIPTION
   Development Status
     The following methods are not yet implemented:
 
-    "graph", "dump", "restore", "tune", "last", "info", "rrdresize",
-    "xport", "rrdcgi".
+    "graph" (partially), "dump", "restore", "tune", "last", "info",
+    "rrdresize", "xport", "rrdcgi".
 
   Error Handling
     By default, "RRDTool::OO"'s methods will throw fatal errors (as in:
