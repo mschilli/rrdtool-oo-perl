@@ -42,8 +42,6 @@ SYNOPSIS
         );
 
 DESCRIPTION
-    Note: This module is under development.
-
     "RRDTool::OO" is an object-oriented interface to Tobi Oetiker's round
     robin database tool *rrdtool*. It uses *rrdtool*'s "RRDs" module to get
     access to *rrdtool*'s shared library.

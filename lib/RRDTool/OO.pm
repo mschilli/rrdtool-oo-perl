@@ -727,8 +727,6 @@ RRDTool::OO - Object-oriented interface to RRDTool
 
 =head1 DESCRIPTION
 
-B<Note: This module is under development.>
-
 C<RRDTool::OO> is an object-oriented interface to Tobi Oetiker's 
 round robin database tool I<rrdtool>. It uses I<rrdtool>'s 
 C<RRDs> module to get access to I<rrdtool>'s shared library.
