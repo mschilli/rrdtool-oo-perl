@@ -119,6 +119,14 @@ while(my($time, $val) = $rrd->fetch_next()) {
 is($count, 7, "items found");
 
 ######################################################################
+# check info for this rrd
+######################################################################
+my $info = $rrd->info;
+is $info->{'ds'}{'load'}{'type'} => 'GAUGE', 'check RRDTool::OO::info';
+is $info->{'ds'}{'load'}{'max'} => '10', 'check RRDTool::OO::info';
+is $info->{'rra'}['1']{'cf'} => 'MAX', 'check RRDTool::OO::info';
+
+######################################################################
 # Failed update: time went backwards
 ######################################################################
 $rrd->{raise_error} = 0;

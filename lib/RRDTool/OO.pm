@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -688,11 +688,48 @@ sub meta_data_discover {
 }
 
 #################################################
+sub info_aux {
+#################################################
+    my($self) = @_;
+
+    return $self->RRDs_execute("info", $self->{file});
+}
+
+#################################################
 sub info {
 #################################################
     my($self) = @_;
 
-    my $hashref = $self->RRDs_execute("info", $self->{file});
+    my $hashref = $self->info_aux();
+
+        # Returns something like
+          # {'rra[0].rows' => 5,
+          # 'rra[1].pdp_per_row' => 5,
+          # 'last_update' => 1080462600,
+          # 'rra[0].cf' => 'MAX',
+          # 'step' => 60,
+          # 'rra[1].cdp_prep[0].value' => undef,
+          # 'rra[0].cdp_prep[0].unknown_datapoints' => 0,
+          # ...
+          # }
+        # Parse it into a Perl array/hash hierarchy:
+
+    my $h = {};
+
+    for my $key (keys %$hashref) {
+
+        my $ptr = \$h;
+
+        while($key =~ /\G(?:\.?(\w+)|\[(\d+)\]|\[(.*?)\])/g) {
+            $ptr = $1         ? \$$ptr->{$1} : 
+                   defined $2 ? \$$ptr->[$2] : 
+                                \$$ptr->{$3};
+        }
+
+        $$ptr = $hashref->{$key};
+    }
+
+    return $h;
 }
 
 #################################################
@@ -712,6 +749,8 @@ __END__
 RRDTool::OO - Object-oriented interface to RRDTool
 
 =head1 SYNOPSIS
+
+    use RRDTool::OO;
 
         # Constructor     
     my $rrd = RRDTool::OO->new(

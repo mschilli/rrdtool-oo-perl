@@ -1,11 +1,13 @@
 ######################################################################
-    RRDTool::OO 0.07
+    RRDTool::OO 0.08
 ######################################################################
 
 NAME
     RRDTool::OO - Object-oriented interface to RRDTool
 
 SYNOPSIS
+        use RRDTool::OO;
+
             # Constructor     
         my $rrd = RRDTool::OO->new(
                      file => "myrrdfile.rdd" );

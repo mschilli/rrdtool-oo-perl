@@ -33,11 +33,11 @@ ok(-e "foo", "RRD exists");
 # Change ds type
 #####################################################
 my $hashref = $rrd->info();
-is($hashref->{'ds[foobar].type'}, 'GAUGE', 'dstype before tune');
+is($hashref->{'ds'}{'foobar'}{'type'}, 'GAUGE', 'dstype before tune');
 $rrd->tune(dsname => 'foobar', type => "COUNTER");
 
 $hashref = $rrd->info();
-is($hashref->{'ds[foobar].type'}, 'COUNTER', 'dstype tuned');
+is($hashref->{'ds'}{'foobar'}{'type'}, 'COUNTER', 'dstype tuned');
 
 #####################################################
 # Change ds name
@@ -45,7 +45,7 @@ is($hashref->{'ds[foobar].type'}, 'COUNTER', 'dstype tuned');
 $rrd->tune(name => "newfoobar");
 
 $hashref = $rrd->info();
-is($hashref->{'ds[newfoobar].type'}, 'COUNTER', 'dsname tuned');
+is($hashref->{'ds'}{'newfoobar'}{'type'}, 'COUNTER', 'dsname tuned');
 
 #####################################################
 # Change minimum/maximum
@@ -53,17 +53,17 @@ is($hashref->{'ds[newfoobar].type'}, 'COUNTER', 'dsname tuned');
 $rrd->tune(maximum => 20, minimum => 5);
 
 $hashref = $rrd->info();
-is($hashref->{'ds[newfoobar].max'}, '20', 'maximum tuned');
-is($hashref->{'ds[newfoobar].min'}, '5', 'minimum tuned');
+is($hashref->{'ds'}{'newfoobar'}{'max'}, '20', 'maximum tuned');
+is($hashref->{'ds'}{'newfoobar'}{'min'}, '5', 'minimum tuned');
 
 #####################################################
 # Change heartbeat
 #####################################################
-is($hashref->{'ds[newfoobar].minimal_heartbeat'}, '600', 'heartbeat before');
+is($hashref->{'ds'}{'newfoobar'}{'minimal_heartbeat'}, '600', 'heartbeat before');
 $rrd->tune(heartbeat => 200);
 
 $hashref = $rrd->info();
-is($hashref->{'ds[newfoobar].minimal_heartbeat'}, '200', 'heartbeat tuned');
+is($hashref->{'ds'}{'newfoobar'}{'minimal_heartbeat'}, '200', 'heartbeat tuned');
 
 #####################################################
 # Get last update
