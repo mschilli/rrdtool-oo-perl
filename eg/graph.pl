@@ -57,6 +57,10 @@ $rrd->graph(
     end            => $start_time + $nof_iterations * 60,
     width          => 700,
     height         => 300,
+    color          => { back   => '#0e0e0e',
+                        arrow  => '#ff0000',
+                        canvas => '#eebbbb',
+                      },
         # First graph
     draw           => {
         type      => "area",
