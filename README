@@ -36,9 +36,13 @@ SYNOPSIS
 
             # Draw a graph in a PNG image
         $rrd->graph(
-          file           => "mygraph.png",
+          image          => "mygraph.png",
           vertical_label => 'My Salary',
           start          => time() - 10,
+          draw           => {
+              type  => "area",
+              color => '0000FF',
+          }
         );
 
 DESCRIPTION
