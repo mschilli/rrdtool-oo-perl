@@ -818,7 +818,7 @@ If there's only one data source in the RRD, drawing nice graph in
 an image file on disk is as easy as
 
     $rrd->graph(
-      file           => $image_file_name,
+      image          => $image_file_name,
       vertical_label => 'My Salary',
       draw           => { thickness => 2,
                           color     => 'FF0000'},
@@ -829,7 +829,7 @@ end time of now. Specify C<start> and C<end> explicitely to
 be clear:
 
     $rrd->graph(
-      file           => $image_file_name,
+      image          => $image_file_name,
       vertical_label => 'My Salary',
       start          => time() - 24*3600,
       end            => time(),
@@ -837,12 +837,15 @@ be clear:
                           color     => 'FF0000'},
     );
 
+As always, C<RRDTool::OO> will pick reasonable defaults for parameters
+not specified. The values for data source and consolidation function
+are default to the first values it finds in the RRD.
 If there are multiple datasources in the RRD or multiple archives
 with different values for C<cfunc>, just specify explicitely which
 one to draw:
 
     $rrd->graph(
-      file           => $image_file_name,
+      image          => $image_file_name,
       vertical_label => 'My Salary',
       draw           => {
         thickness => 2,
@@ -857,7 +860,7 @@ graphical values stacked on top of each other.
 And you can certainly have more than one graph in the picture:
 
     $rrd->graph(
-      file           => $image_file_name,
+      image          => $image_file_name,
       vertical_label => 'My Salary',
       draw           => {
         type      => 'area',
@@ -871,8 +874,64 @@ And you can certainly have more than one graph in the picture:
         cfunc     => 'AVERAGE'},
     );
 
-NOTE: C<graph()> is still under development, the interface displayed 
-above might change.
+Graphs may assemble data from different RRD files. Just specify
+which file you want to draw the data from per C<draw>:
+
+    $rrd->graph(
+      image          => $image_file_name,
+      vertical_label => 'Network Traffic',
+      draw           => {
+        file      => "file1.rrd",
+      },
+      draw        => {
+        file      => "file2.rrd",
+        type      => 'stack',
+        color     => '00FF00', # a green area stacked on top of the red one 
+        dsname    => "load",
+        cfunc     => 'AVERAGE'},
+    );
+
+If a C<file> parameter is specified per C<draw>, the defaults for C<dsname>
+and C<cfunc> are fetched from this file, not from the file that's attached
+to the C<RRDTool::OO> object C<$rrd> used.
+
+On a global level, in addition to the C<vertical_label> parameter shown
+in the examples above, C<graph> offers a plethora of parameters:
+
+C<vertical_label>, 
+C<title>, 
+C<start>, 
+C<end>, 
+C<x_grid>, 
+C<y_grid>, 
+C<alt_y_grid>, 
+C<no_minor>, 
+C<alt_y_mrtg>, 
+C<alt_autoscale>, 
+C<alt_autoscale_max>, 
+C<units_exponent>, 
+C<units_length>, 
+C<width>, 
+C<height>, 
+C<interlaced>, 
+C<imginfo>, 
+C<imgformat>, 
+C<overlay>, 
+C<unit>, 
+C<lazy>, 
+C<upper_limit>, 
+C<logarithmic>, 
+C<color>, 
+C<no_legend>, 
+C<only_graph>, 
+C<force_rules_legend>, 
+C<title>, 
+C<step>.
+
+Please check the RRDTool documentation for a detailed description
+on what each of them is used for:
+
+    http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/rrdgraph.html
 
 =item I<$rrd-E<gt>error_message()>
 
