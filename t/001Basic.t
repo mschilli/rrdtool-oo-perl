@@ -3,7 +3,8 @@ use Test::More qw(no_plan);
 use RRDTool::OO;
 
 use Log::Log4perl qw(:easy);
-#Log::Log4perl->easy_init({level => $DEBUG, layout => "%L: %m%n"});
+#Log::Log4perl->easy_init({level => $DEBUG, layout => "%L: %m%n", 
+#                          file => 'stdout'});
 
 my $rrd;
 
@@ -49,24 +50,36 @@ like($@, qr/Mandatory parameter/, "create missing hearbeat");
 
     # legal create
 my $rc = $rrd->create(
+    start     => time() - 3600,
+    step      => 10,
     data_source => { name      => 'foobar',
                      type      => 'GAUGE',
-                     heartbeat => 10,
+                     heartbeat => 100,
                    },
     archive     => { cf    => 'MAX',
                      xff   => '0.5',
-                     steps => 5,
-                     rows  => 10,
+                     steps => 1,
+                     rows  => 100,
                    },
 );
 
 is($rc, 1, "create ok");
 ok(-f "foo", "RRD exists");
-END { unlink('foo'); }
 
 ######################################################################
 
-ok($rrd->update(value => '1000'), "update without time");
-ok($rrd->update(value => '1000', time => time() + 10), "update with time");
+for(my $i=100; $i >= 0; $i -= 5) {
+    my $time  = time() - $i;
+    my $value = 1000 + $i;
+    ok($rrd->update(value => $value, time => $time), "update $time:$value");
+}
 
-__END__
+$rrd->fetch_start(start => time() - 100, cf => 'MAX');
+$rrd->fetch_skip_undef();
+my $count = 0;
+while(my $val = $rrd->fetch_next()) {
+    $count++;
+}
+is($count, 10, "10 items found");
+
+END { unlink('foo'); }

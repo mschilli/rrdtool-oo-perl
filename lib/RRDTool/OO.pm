@@ -40,6 +40,12 @@ our $OPTIONS = {
     fetch      => { mandatory => [],
                     optional  => [],
                   },
+    fetch_start=> { mandatory => [qw(cf)],
+                    optional  => [qw(start end)],
+                  },
+    fetch_next => { mandatory => [],
+                    optional  => [],
+                  },
     tune       => { mandatory => [],
                     optional  => [],
                   },
@@ -186,6 +192,78 @@ sub update {
        die "Cannot update rrd with '$update_string'";
 }
 
+#################################################
+sub fetch_start {
+#################################################
+    my($self, @options) = @_;
+
+    check_options "fetch_start", \@options;
+
+    my %options_hash = @options;
+
+    my $cf = $options_hash{cf};
+    delete $options_hash{cf};
+
+    @options = add_dashes(\%options_hash);
+
+    DEBUG "rrdtool fetch_start $self->{file} $cf @options";
+
+    $self->{fetch_result} = RRDs::fetch($self->{file}, $cf, @options) or 
+       die "Cannot run 'fetch $self->{file} @options'";
+
+    $self->{fetch_idx} = 0;
+}
+
+#################################################
+sub add_dashes {
+#################################################
+    my($options_hashref) = @_;
+
+    my @options = ();
+
+    foreach(keys %$options_hashref) {
+        push @options, "--$_", $options_hashref->{$_};
+    }
+   
+    return @options;
+}
+
+#################################################
+sub fetch_next {
+#################################################
+    my($self) = @_;
+
+    if(!defined $self->{fetch_result}->[$self->{fetch_idx}]) {
+        DEBUG "Idx $self->{fetch_idx} returned undef";
+        return undef;
+    }
+
+    my $value = $self->{fetch_result}->[$self->{fetch_idx}++]->[0];
+
+    DEBUG "Found value: $value\n" if defined $value;
+
+    return $value;
+}
+
+#################################################
+sub fetch_skip_undef {
+#################################################
+    my($self) = @_;
+
+    {
+        if(!defined $self->{fetch_result}->[$self->{fetch_idx}]) {
+            return undef;
+        }
+   
+        my $value = $self->{fetch_result}->[$self->{fetch_idx}]->[0];
+
+        unless(defined $value) {
+            $self->{fetch_idx}++;
+            redo;
+        }
+    }
+}
+
 1;
 
 __END__
@@ -199,7 +277,7 @@ $rrd->fetch_skip_undef();
 while(my($value, $time) = $rrd->fetch_next()) {
      # ... $value
 }
-$rrd->fetch_reset();
+$rrd->fetch_start();
 
 $rrd->graph( var   => $varname,
               start => $start_time,
@@ -234,7 +312,7 @@ RRDTool::OO - Object-oriented interface to RRDTool
 
         # Start fetching values from one day back, 
         # but skip undef'd ones first
-    $rrd->fetch_reset(start => $time - 3600*24);
+    $rrd->fetch_start(start => $time - 3600*24);
     $rrd->fetch_skip_undef();
 
         # Fetch stored values
