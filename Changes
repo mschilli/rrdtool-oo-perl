@@ -1,5 +1,8 @@
 
-0.08 (09/22/2004)
+0.08 (09/23/2004)
+    (ms) Martin Kurahaupo <martin@kurahaupo.gen.nz> added a patch
+         to prevent the test suite from failing when run as root
+         because a test file can't be write-protected.
     (ms) Chris Fedde <cfedde@denver.pm.org> provided a patch to 
          structure ::info's output more perl-like. Got input from
          perlmonks (thanks nobull!) on how to efficiently transform

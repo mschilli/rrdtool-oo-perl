@@ -143,17 +143,21 @@ ok($rrd->update(value => 123, time => 1080500000),
    "update with ok timestamp");
 
 ######################################################################
-# Check what happens if the rrd is write-protected all of a sudden 
+# Check what happens if the rrd is write-protected all of a sudden
 ######################################################################
-chmod 0444, "foo";
-eval {
-    $rrd->update(value => 123, time => 1080500100);
-};
+SKIP: {
+    chmod 0444, "foo";
+    skip "can't make test file unwritable (are you root?)", 1 if -w "foo";
 
-if($@) {
-    like($@, qr/Permission denied/, "update on write-protected rrd");
-} else {
-    ok(0, "update on write-protected rrd");
+    eval {
+        $rrd->update(value => 123, time => 1080500100);
+    };
+
+    if($@) {
+        like($@, qr/Permission denied/, "update on write-protected rrd");
+    } else {
+        fail("update on write-protected rrd");
+    }
 }
 
 END { unlink('foo'); }
