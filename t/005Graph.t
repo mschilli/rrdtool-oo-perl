@@ -220,5 +220,69 @@ view("mygraph.png");
 ok(-f "mygraph.png", "Image exists");
 unlink "mygraph.png";
 
+######################################################################
+# Two draws in one graph, one DEF, one CDEF
+######################################################################
+    $rrd->graph(
+      image          => "mygraph.png",
+      vertical_label => 'My Salary',
+      start          => $start_time,
+      end            => $start_time + $nof_iterations * 60,
+      draw           => { 
+          type      => "line",
+          thickness => 3,
+          color     => "00FF00",
+          name      => "first",
+      },
+      draw          => { 
+          type      => "line",
+          thickness => 3,
+          color     => "0000FF",
+          cdef      => "first,2,*",
+      },
+      draw          => { 
+          type      => "line",
+          thickness => 3,
+          color     => "0000FF",
+          cdef      => "first,3,*",
+      },
+      draw          => { 
+          type      => "line",
+          thickness => 3,
+          color     => "0000FF",
+          cdef      => "first,4,*",
+      },
+    );
+
+view("mygraph.png");
+ok(-f "mygraph.png", "Image exists");
+unlink "mygraph.png";
+
+######################################################################
+# Test
+######################################################################
+    $rrd->graph(
+      image          => "mygraph.png",
+      vertical_label => 'My Salary',
+      start          => $start_time,
+      end            => $start_time + $nof_iterations * 60,
+      draw           => {
+        type      => 'line',
+        color     => 'FF0000', # red line
+        name      => 'firstgraph',
+        legend    => 'Unmodified Load',
+      },
+      draw        => {
+        type      => 'line',
+        color     => '00FF00', # green line
+        cdef      => "firstgraph,2,*",
+        legend    => 'Load Doubled Up',
+      },
+    );
+
+view("mygraph.png");
+ok(-f "mygraph.png", "Image exists");
+unlink "mygraph.png";
+
 unlink("foo");
 unlink("bar");

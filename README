@@ -312,6 +312,37 @@ DESCRIPTION
         "dsname" and "cfunc" are fetched from this file, not from the file
         that's attached to the "RRDTool::OO" object $rrd used.
 
+        Graphs may also consist of algebraic calculations of previously
+        defined graphs. In this case, graphs derived from real data sources
+        need to be named, so that subsequent "cdef" definitions can refer to
+        them and calculate new graphs, based on the previously defined
+        graph:
+
+            $rrd->graph(
+              image          => $image_file_name,
+              vertical_label => 'Network Traffic',
+              draw           => {
+                type      => 'line',
+                color     => 'FF0000', # red line
+                dsname    => 'load',
+                name      => 'firstgraph',
+                legend    => 'Unmodified Load',
+              },
+              draw        => {
+                type      => 'line',
+                color     => '00FF00', # green line
+                cdef      => "firstgraph,2,*",
+                legend    => 'Load Doubled Up',
+              },
+            );
+
+        Note that the second "draw" doesn't refer to a datasource "dsname"
+        (nor does it fall back to the default data source), but defines a
+        "cdef", performing calculations on a previously defined draw named
+        "firstgraph". The calculation is specified using RRDTool's reverse
+        polish notation, where instructions are separated by commas
+        ("firstgraph,2,*" simply multiplies "firstgraph"'s values by 2).
+
         On a global level, in addition to the "vertical_label" parameter
         shown in the examples above, "graph" offers a plethora of
         parameters:

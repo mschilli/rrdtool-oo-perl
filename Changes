@@ -1,6 +1,8 @@
 
-0.10 (not yet released)
+0.10 (11/20/2004)
     (ms) Added legends to graph()
+    (ms) Maxence Gerbedoen <maxxenceg@wanadoo.fr> suggested a patch to 
+         add 'cdef' functionality. Added slightly differently.
 
 0.09 (10/08/2004)
     (ms) Fixed bug [cpan #7897]. new() now accepts a raise_error setting.
