@@ -25,8 +25,8 @@ our $OPTIONS = {
                       optional  => [qw(cfunc cpoints xff)],
                     },
                   },
-    update     => { mandatory => [qw(value)],
-                    optional  => [qw(time)],
+    update     => { mandatory => [qw()],
+                    optional  => [qw(time value values)],
                   },
     graph      => { mandatory => [qw(file)],
                     optional  => [qw(vertical_label start end)],
@@ -263,7 +263,7 @@ sub update {
     my @update_options = ();
 
     if(exists $options_hash{values}) {
-        if(ref($options_hash{values} eq "HASH")) {
+        if(ref($options_hash{values}) eq "HASH") {
                 # Do the template magic
             push @update_options, "--template", 
                  join(":", keys %{$options_hash{values}});
