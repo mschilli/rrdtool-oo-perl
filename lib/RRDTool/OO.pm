@@ -71,8 +71,6 @@ sub check_options {
 #################################################
     my($method, $options) = @_;
 
-    DEBUG "checking '@$options'";
-
     $options = [] unless defined $options;
 
     my %options_hash = (@$options);
@@ -188,8 +186,10 @@ sub update {
     my $update_string = "$options_hash{time}:$options_hash{value}";
 
     DEBUG "rrdtool update $self->{file} $update_string";
-    RRDs::update($self->{file}, $update_string) or 
-       die "Cannot update rrd with '$update_string'";
+
+    my $rc = RRDs::update($self->{file}, $update_string);
+
+    return $rc;
 }
 
 #################################################
@@ -264,29 +264,16 @@ sub fetch_skip_undef {
     }
 }
 
-1;
+#################################################
+sub error_message {
+#################################################
+    my($self) = @_;
 
-__END__
-
-$rrd->update( time => $time,
-              value => $value,
-             );
-
-$rrd->fetch_start( start => $time, end => $endtime );
-$rrd->fetch_skip_undef();
-while(my($value, $time) = $rrd->fetch_next()) {
-     # ... $value
+    return RRDs::error();
 }
-$rrd->fetch_start();
-
-$rrd->graph( var   => $varname,
-              start => $start_time,
-              end   => $end_time,
-            );
-
-$rrd->delete();
 
 1;
+
 __END__
 
 =head1 NAME
@@ -298,9 +285,9 @@ RRDTool::OO - Object-oriented interface to RRDTool
         # Constructor
     my $rrd = RRDTool::OO->new( file => $file );
 
-        # Create an archive
+        # Create a round-robin database
     $rrd->create(
-         data_source => { name => $ds_name }
+         data_source => { name => $ds_name },
          archive     => { name         => $arch_name,
                           con_function => 'MAX',
                           max_points   => 5,
@@ -327,6 +314,54 @@ round robin database RRDTool. It uses the C<RRDs> module, under
 the hood, but provides a user-friendly interface with named parameters 
 instead of the more compact but rather terse RRDTool configuration 
 notation.
+
+=over 4
+
+=item I<my $rrd = RRDTool::OO-E<gt>new( file =E<gt> $file )>
+
+The constructor hooks up with an existing RRD database file C<$file>, 
+but doesn't create a new one if none exists. That's what the C<create()>
+methode is for. Returns a C<RRDTool::OO> object, which can be used to 
+get access to the following methods.
+
+=item I<$rrd-E<gt>create( ... )>
+
+Creates a new round robin database (RRD). It consists of one or more
+data sources and one or more archives:
+
+    $rrd->create(
+         data_source => { name => $ds_name }
+         archive     => { name         => $arch_name,
+                          con_function => 'MAX',
+                          max_points   => 5,
+                          con_points   => 1 });
+
+=item I<$rrd-E<gt>update([time =E<gt> $time,] value =E<gt> $value) >
+
+Update the round robin database with a value and an optional time stamp.
+If the timestamp is omitted, C<RRDTool::OO> will supply C<U> for C<rrdtool>,
+indicating that the current time should be used.
+
+=item I<$rrd-E<gt>fetch_start(cf =E<gt> $cons_function, ... )>
+
+Initializes the iterator to fetch data from the RRD.
+
+=item I<$rrd-E<gt>fetch_skip_undef()>
+
+Positions the iterator to the first defined value in the RRD, skipping
+undefined values.
+
+=item I<$rrd-E<gt>fetch_next()>
+
+Gets the next row from the RRD iterator, initialized by a previous call
+to C<$rrd-E<gt>fetch_start()>.
+
+=item I<$rrd-E<gt>error_message()>
+
+Return the message of the last error that occurred while interacting
+with C<RRDTool::OO>.
+
+=back
 
 =head1 SEE ALSO
 

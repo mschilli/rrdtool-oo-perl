@@ -67,6 +67,8 @@ is($rc, 1, "create ok");
 ok(-f "foo", "RRD exists");
 
 ######################################################################
+# Check updates
+######################################################################
 
 for(my $i=100; $i >= 0; $i -= 5) {
     my $time  = time() - $i;
@@ -81,5 +83,13 @@ while(my $val = $rrd->fetch_next()) {
     $count++;
 }
 is($count, 10, "10 items found");
+
+######################################################################
+# Failed update: time went backwards
+######################################################################
+ok(! $rrd->update(value => 123, time => time()), 
+   "update with expired timestamp");
+
+like($rrd->error_message(), qr/illegal attempt to update using time \d+ when last update time is \d+ \(minimum one second step\)/, "check error message");
 
 END { unlink('foo'); }
