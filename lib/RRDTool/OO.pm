@@ -147,6 +147,15 @@ sub new {
 }
 
 #################################################
+sub first_def {
+#################################################
+    foreach(@_) {
+        return $_ if defined $_;
+    }
+    return undef;
+}
+
+#################################################
 sub create {
 #################################################
     my($self, @options) = @_;
@@ -426,20 +435,18 @@ sub graph {
 
     # Set dsname default
     if(!exists $options_hash{dsname}) {
-        my $dsnames = $self->meta_data("dsnames");
-        LOGDIE "No default archive dsname" unless 
-            defined $dsnames->[0];
-        $options_hash{dsname} = $dsnames->[0];
-        DEBUG "Getting default dsname '$options_hash{dsname}'";
+        my $dsname = $self->default("dsname");
+        LOGDIE "No default archive dsname" unless defined $dsname;
+        $options_hash{dsname} = $dsname;
+        DEBUG "Getting default dsname '$dsname'";
     }
 
     # Set cfunc default
     if(!exists $options_hash{cfunc}) {
-        my $cfuncs = $self->meta_data("cfuncs");
-        LOGDIE "No default archive cfunc" unless 
-            defined $cfuncs->[0];
-        $options_hash{cfunc} = $cfuncs->[0];
-        DEBUG "Getting default cfunc '$options_hash{cfunc}'";
+        my $cfunc = $self->default("cfunc");
+        LOGDIE "No default archive cfunc" unless defined $cfunc;
+        $options_hash{cfunc} = $cfunc;
+        DEBUG "Getting default cfunc '$cfunc'";
     }
 
         # Push a pseudo draw if there's none.
@@ -448,16 +455,29 @@ sub graph {
     for(@draws) {
         check_options "graph/draw", [%$_];
 
-use Data::Dumper;
-print Dumper($_);
         $_->{thickness} ||= 1;        # LINE1 is default
         $_->{color}     ||= 'FF0000'; # red is default
 
+        $_->{file}   = first_def $_->{file}, $self->{file};
+
+        my($dsname, $cfunc);
+
+        if($_->{file} ne $self->{file}) {
+            my $rrd = __PACKAGE__->new(file => $_->{file});
+            $dsname = $rrd->default('dsname');
+            $cfunc  = $rrd->default('cfunc');
+        }
+
+            # Use either directly defined, default for a given file or
+            # default for default file, in this order.
+        $_->{dsname} = first_def $_->{dsname}, $dsname, $options_hash{dsname};
+        $_->{cfunc}  = first_def $_->{cfunc}, $cfunc, $options_hash{cfunc};
+
         # Create the draw strings
-            #DEF:myload=$DB:load:MAX
-        push @options, "DEF:draw$draw_count=$self->{file}:" .
-                       "$options_hash{dsname}:" .
-                       "$options_hash{cfunc}";
+        #DEF:myload=$DB:load:MAX
+        push @options, "DEF:draw$draw_count=$_->{file}:" .
+                       "$_->{dsname}:" .
+                       "$_->{cfunc}";
             #LINE2:myload#FF0000
         $_->{type} ||= 'line';
 
@@ -477,6 +497,28 @@ print Dumper($_);
     unshift @options, $image;
 
     $self->RRDs_execute("graph", @options);
+}
+
+#################################################
+sub default {
+#################################################
+    my($self, $param) = @_;
+
+    if($param eq "cfunc") {
+        my $cfuncs = $self->meta_data("cfuncs");
+        return undef unless $cfuncs;
+            # Return the first of all defined consolidation functions
+        return $cfuncs->[0];
+    }
+
+    if($param eq "dsname") {
+        my $dsnames = $self->meta_data("dsnames");
+        return undef unless $dsnames;
+            # Return the first of all defined data sources
+        return $dsnames->[0];
+    }
+
+    return undef;
 }
 
 #################################################

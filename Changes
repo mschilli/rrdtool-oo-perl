@@ -1,6 +1,8 @@
 
-0.04 (not yet release)
-    (ms) added more functionality to graph()
+0.04 (not yet released)
+    (ms) added more functionality to graph(), new test cases.
+    (ms) if a graph contains several files, use the defaults
+         from each file
 
 0.03 05/18/2004
     (ms) fixed discovery of CFs
