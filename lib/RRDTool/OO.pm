@@ -7,12 +7,12 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
     new        => { mandatory => ['file'],
-                    optional  => [],
+                    optional  => [qw(raise_error)],
                   },
     create     => { mandatory => [qw(data_source archive)],
                     optional  => [qw(step start)],
@@ -154,7 +154,7 @@ sub new {
               dsnames      => [],
               dsnames_hash => {},
             },
-        file              => $options{file},
+        %options,
     };
 
     bless $self, $class;

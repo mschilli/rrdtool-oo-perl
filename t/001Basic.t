@@ -160,4 +160,14 @@ SKIP: {
     }
 }
 
+######################################################################
+    # constructor including raise_error (cpan #7897)
+$rrd = RRDTool::OO->new(file => "foo1", raise_error => 0);
+eval { $rrd->update(value => 123, time => 123); };
+is($@, "", "Error caught");
+
+$rrd = RRDTool::OO->new(file => "foo1", raise_error => 1);
+eval { $rrd->update(value => 123, time => 123); };
+like($@, qr/No such file or directory/, "Error raised");
+
 END { unlink('foo'); }

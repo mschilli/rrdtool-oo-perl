@@ -1,4 +1,7 @@
 
+0.09 (10/08/2004)
+    (ms) Fixed bug [cpan #7897]. new() now accepts a raise_error setting.
+
 0.08 (09/24/2004)
     (ms) Added documentation for multiple data sources and archives.
     (ms) Martin Kurahaupo <martin@kurahaupo.gen.nz> added a patch
