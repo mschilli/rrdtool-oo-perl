@@ -720,12 +720,19 @@ RRDTool::OO - Object-oriented interface to RRDTool
 
         # Draw a graph in a PNG image
     $rrd->graph(
-      file           => "mygraph.png",
+      image          => "mygraph.png",
       vertical_label => 'My Salary',
       start          => time() - 10,
+      draw           => {
+          type  => "area",
+          color => '0000FF',
+      }
     );
 
 =head1 DESCRIPTION
+
+=for html
+<IMG SRC=/images/rrdtool/mygraph.png>
 
 C<RRDTool::OO> is an object-oriented interface to Tobi Oetiker's 
 round robin database tool I<rrdtool>. It uses I<rrdtool>'s 
