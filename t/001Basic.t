@@ -34,20 +34,21 @@ like($@, qr/Mandatory parameter/, "create missing data_source");
 eval { $rrd->create( data_source => {} ); };
 like($@, qr/Mandatory parameter/, "create missing archive");
 
-    # create missing heartbeat
+    # create with superfluous param
 eval { $rrd->create(
     data_source => { name      => 'foobar',
                      type      => 'foo',
                      # heartbeat => 10,
                    },
     archive     => { cfunc   => 'abc',
+                     name    => 'archname',
                      xff     => '0.5',
                      cpoints => 5,
                      rows    => 10,
                    },
 ) };
 
-like($@, qr/Mandatory parameter/, "create missing hearbeat");
+like($@, qr/Illegal parameter 'name'/, "create missing hearbeat");
 
 ######################################################################
 # Run the test example in
