@@ -4,7 +4,7 @@
 
 TODO:
 
-* add graph method
-* fetch_start/next iterator with saved timestamp, without caching all values
+* test multiple archives
 * Test: rrd write-protected
 * Extra test case file for mult values
+* fetch_start/next iterator with saved timestamp, without caching all values

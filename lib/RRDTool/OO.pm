@@ -28,8 +28,12 @@ our $OPTIONS = {
     update     => { mandatory => [qw(value)],
                     optional  => [qw(time)],
                   },
-    graph      => { mandatory => [],
-                    optional  => [],
+    graph      => { mandatory => [qw(file)],
+                    optional  => [qw(vertical_label start end)],
+                    draw      => {
+                      mandatory => [qw()],
+                      optional  => [qw(dsname cfunc thickness color)],
+                    },
                   },
     fetch_start=> { mandatory => [qw()],
                     optional  => [qw(cfunc start end resolution)],
@@ -62,6 +66,13 @@ our $OPTIONS = {
                     optional  => [],
                   },
 };
+
+my %RRDs_functions = (
+    create => \&RRDs::create,
+    fetch  => \&RRDs::fetch,
+    update => \&RRDs::update,
+    graph  => \&RRDs::graph,
+);
 
 #################################################
 sub check_options {
@@ -111,8 +122,15 @@ sub new {
     check_options "new", [%options];
 
     my $self = {
-        raise_error => 1,
-        file        => $options{file},
+        raise_error       => 1,
+        meta              => 
+            { discovered   => 0,
+              cfuncs       => [],
+              cfuncs_hash  => {},
+              dsnames      => [],
+              dsnames_hash => {},
+            },
+        file              => $options{file},
     };
 
     bless $self, $class;
@@ -162,10 +180,9 @@ sub create {
            "DS:$_->{name}:$_->{type}:$_->{heartbeat}:" .
            (defined $_->{min} ? $_->{min} : "U") . ":" .
            (defined $_->{max} ? $_->{max} : "U");
-    }
 
-    $self->{archive_cfuncs} = [];
-    my %cfuncs = ();
+       $self->meta_data("dsnames", $_->{name}, 1);
+    }
 
     for(@archives) {
        # RRA:CF:xff:steps:rows
@@ -183,8 +200,8 @@ sub create {
        if(! exists $_->{cfunc}) {
            $_->{cfunc} = 'MAX';
        }
-       push @{$self->{archive_cfuncs}}, $_->{cfunc} unless 
-           $cfuncs{$_->{cfunc}}++;
+       
+       $self->meta_data("cfuncs", $_->{cfunc}, 1);
 
        push @rrdtool_options, 
            "RRA:$_->{cfunc}:$_->{xff}:$_->{cpoints}:$_->{rows}";
@@ -193,12 +210,6 @@ sub create {
     $self->RRDs_execute("create", @rrdtool_options);
 }
 
-my %RRDs_functions = (
-    create => \&RRDs::create,
-    fetch  => \&RRDs::fetch,
-    update => \&RRDs::update,
-);
-    
 #################################################
 sub RRDs_execute {
 #################################################
@@ -279,9 +290,10 @@ sub fetch_start {
     my %options_hash = @options;
 
     if(!exists $options_hash{cfunc}) {
+        my $cfuncs = $self->meta_data("cfuncs");
         LOGDIE "No default archive cfunc" unless 
-            defined $self->{archive_cfuncs}->[0];
-        $options_hash{cfunc} = $self->{archive_cfuncs}->[0];
+            defined $cfuncs->[0];
+        $options_hash{cfunc} = $cfuncs->[0];
         DEBUG "Getting default cfunc '$options_hash{cfunc}'";
     }
 
@@ -354,12 +366,19 @@ sub fetch_skip_undef {
 #################################################
 sub add_dashes {
 #################################################
-    my($options_hashref) = @_;
+    my($options_hashref, $assign_hashref) = @_;
+
+    $assign_hashref = {} unless $assign_hashref;
 
     my @options = ();
 
     foreach(keys %$options_hashref) {
-        push @options, "--$_", $options_hashref->{$_};
+        (my $newname = $_) =~ s/_/-/g;
+        if($assign_hashref->{$_}) {
+            push @options, "--$newname=$options_hashref->{$_}";
+        } else {
+            push @options, "--$newname", $options_hashref->{$_};
+        }
     }
    
     return @options;
@@ -371,6 +390,122 @@ sub error_message {
     my($self) = @_;
 
     return RRDs::error();
+}
+
+#################################################
+sub graph {
+#################################################
+    my($self, @options) = @_;
+
+    check_options "graph", \@options;
+
+    my @draws = ();
+    my %options_hash = @options;
+    my $draw_count   = 1;
+
+    my $file = delete $options_hash{file};
+    delete $options_hash{draw};
+
+    for(my $i=0; $i < @options; $i += 2) {
+        push @draws, $options[$i+1] if $options[$i] eq "draw";
+    }
+
+    @options = add_dashes(\%options_hash);
+
+    # Set dsname default
+    if(!exists $options_hash{dsname}) {
+        my $dsnames = $self->meta_data("dsnames");
+        LOGDIE "No default archive dsname" unless 
+            defined $dsnames->[0];
+        $options_hash{dsname} = $dsnames->[0];
+        DEBUG "Getting default dsname '$options_hash{dsname}'";
+    }
+
+    # Set cfunc default
+    if(!exists $options_hash{cfunc}) {
+        my $cfuncs = $self->meta_data("cfuncs");
+        LOGDIE "No default archive cfunc" unless 
+            defined $cfuncs->[0];
+        $options_hash{cfunc} = $cfuncs->[0];
+        DEBUG "Getting default cfunc '$options_hash{cfunc}'";
+    }
+
+        # Push a pseudo draw if there's none.
+    @draws = ({}) unless @draws;
+
+    for(@draws) {
+        check_options "graph/draw", [%$_];
+
+        $_->{thickness} ||= 1;        # LINE1 is default
+        $_->{color}     ||= 'FF0000'; # red is default
+
+        # Create the draw strings
+            #DEF:myload=$DB:load:MAX
+        push @options, "DEF:draw$draw_count=$self->{file}:" .
+                       "$options_hash{dsname}:" .
+                       "$options_hash{cfunc}";
+            #LINE2:myload#FF0000
+        push @options, "LINE$_->{thickness}:draw$draw_count#$_->{color}";
+        $draw_count++;
+    }
+
+    unshift @options, $file;
+
+    $self->RRDs_execute("graph", @options);
+}
+
+#################################################
+sub meta_data {
+#################################################
+    my($self, $field, $value, $unique_push) = @_;
+
+    if(defined $value) {
+        $self->{meta}->{discovered} = 1;
+    }
+
+    if(!$self->{meta}->{discovered}) {
+        $self->meta_data_discover();
+    }
+
+    if(defined $value) {
+        if($unique_push) {
+            push @{$self->{meta}->{$field}}, $value unless 
+                   $self->{meta}->{"${field}_hash"}->{$value}++;
+        } else {
+            $self->{meta}->{$field} = $value;
+        }
+    }
+
+    return $self->{meta}->{$field};
+}
+
+#################################################
+sub meta_data_discover {
+#################################################
+    my($self) = @_;
+
+    local($self->{raise_error});
+
+        # Disable throwing an error for a moment
+    $self->{raise_error} = 0;
+
+    for my $cfunc (qw(AVERAGE MAX MIN LAST)) {
+        my ($time, $step, $dsnames, $data) =
+             $self->RRDs_execute("fetch", $self->{file}, $cfunc, 
+                 "--start", time()-1);
+        next unless defined $time;
+        DEBUG "Discovered cfunc $cfunc and dsnames=(@$dsnames)";
+
+        $self->meta_data("cfuncs", $cfunc, 1);
+        for my $dsname (@$dsnames) {
+            $self->meta_data("dsnames", $dsname, 1);
+        }
+    }
+
+    DEBUG "Discovery: cfuncs=(@{$self->{meta}->{cfuncs}}) ",
+                    "dsnames=(@{$self->{meta}->{dsnames}})";
+
+    $self->{meta}->{discovered} = 1;
 }
 
 1;
@@ -410,6 +545,13 @@ RRDTool::OO - Object-oriented interface to RRDTool
          print "$time: ", 
                defined $value ? $value : "[undef]", "\n";
     }
+
+        # Draw a graph in a PNG image
+    $rrd->graph(
+      file           => "mygraph.png",
+      vertical_label => 'My Salary',
+      start          => time() - 10,
+    );
 
 =head1 DESCRIPTION
 
@@ -584,12 +726,11 @@ along with all values as a list.
 =item I<$rrd-E<gt>graph( ... )>
 
 If there's only one data source in the RRD, drawing nice graph in
-a image file on disk is as easy as
+an image file on disk is as easy as
 
     $rrd->graph(
       file           => $image_file_name,
       vertical_label => 'My Salary',
-      color          => 'FF0000', # (red)
       draw           => { thickness => 2,
                           color     => 'FF0000'},
     );
@@ -616,10 +757,10 @@ one to draw:
       file           => $image_file_name,
       vertical_label => 'My Salary',
       draw           => {
-        thickness        => 2,
-        color            => 'FF0000',
-        data_source_name => "load",
-        cfunc            => 'MAX'},
+        thickness => 2,
+        color     => 'FF0000',
+        dsname    => "load",
+        cfunc     => 'MAX'},
     );
 
 And you can certainly have more than one graph in the picture:
@@ -628,15 +769,15 @@ And you can certainly have more than one graph in the picture:
       file           => $image_file_name,
       vertical_label => 'My Salary',
       draw           => {
-        thickness        => 2,
-        color            => 'FF0000', # red
-        data_source_name => "load",
-        cfunc            => 'MAX'},
-      draw           => {
-        thickness        => 2,
-        color            => '00FF00', # green
-        data_source_name => "load",
-        cfunc            => 'AVERAGE'},
+        thickness => 2,
+        color     => 'FF0000', # red
+        dsname    => "load",
+        cfunc     => 'MAX'},
+      draw        => {
+        thickness => 2,
+        color     => '00FF00', # green
+        dsname    => "load",
+        cfunc     => 'AVERAGE'},
     );
 
 NOTE: C<graph()> is still under development, the interface displayed 
