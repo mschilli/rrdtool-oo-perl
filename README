@@ -18,7 +18,7 @@ SYNOPSIS
              archive     => { rows      => 5 });
 
             # Update RRD with sample values, use current time.
-        for(1..3) {
+        for(1..5) {
             $rrd->update($_);
             sleep(1);
         }
