@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -1074,12 +1074,8 @@ with C<RRDTool::OO>.
 
 The following methods are not yet implemented:
 
-C<dump>,
-C<restore>,
-C<last>,
-C<rrdresize>,
-C<xport>,
-C<rrdcgi>.
+C<dump>, C<restore> (just because they're not offered via RRDs),
+C<rrdresize>, C<xport>, C<rrdcgi>.
 
 =head2 Error Handling
 

@@ -1,5 +1,5 @@
 ######################################################################
-    RRDTool::OO 0.03
+    RRDTool::OO 0.04
 ######################################################################
 
 NAME
@@ -201,7 +201,7 @@ DESCRIPTION
         image file on disk is as easy as
 
             $rrd->graph(
-              file           => $image_file_name,
+              image          => $image_file_name,
               vertical_label => 'My Salary',
               draw           => { thickness => 2,
                                   color     => 'FF0000'},
@@ -211,21 +211,23 @@ DESCRIPTION
         of now. Specify "start" and "end" explicitely to be clear:
 
             $rrd->graph(
-              file           => $image_file_name,
+              image          => $image_file_name,
               vertical_label => 'My Salary',
-              color          => 'FF0000', # (red)
               start          => time() - 24*3600,
               end            => time(),
               draw           => { thickness => 2,
                                   color     => 'FF0000'},
             );
 
-        If there are multiple datasources in the RRD or multiple archives
-        with different values for "cfunc", just specify explicitely which
-        one to draw:
+        As always, "RRDTool::OO" will pick reasonable defaults for
+        parameters not specified. The values for data source and
+        consolidation function are default to the first values it finds in
+        the RRD. If there are multiple datasources in the RRD or multiple
+        archives with different values for "cfunc", just specify explicitely
+        which one to draw:
 
             $rrd->graph(
-              file           => $image_file_name,
+              image          => $image_file_name,
               vertical_label => 'My Salary',
               draw           => {
                 thickness => 2,
@@ -234,25 +236,103 @@ DESCRIPTION
                 cfunc     => 'MAX'},
             );
 
-        And you can certainly have more than one graph in the picture:
+        If "draw" doesn't define a "type", it defaults to "line". Other
+        values are "area" for solid colored areas and "stack" for graphical
+        values stacked on top of each other. And you can certainly have more
+        than one graph in the picture:
 
             $rrd->graph(
-              file           => $image_file_name,
+              image          => $image_file_name,
               vertical_label => 'My Salary',
               draw           => {
-                thickness => 2,
-                color     => 'FF0000', # red
+                type      => 'area',
+                color     => 'FF0000', # red area
                 dsname    => "load",
                 cfunc     => 'MAX'},
               draw        => {
-                thickness => 2,
-                color     => '00FF00', # green
+                type      => 'stack',
+                color     => '00FF00', # a green area stacked on top of the red one 
                 dsname    => "load",
                 cfunc     => 'AVERAGE'},
             );
 
-        NOTE: "graph()" is still under development, the interface displayed
-        above might change.
+        Graphs may assemble data from different RRD files. Just specify
+        which file you want to draw the data from per "draw":
+
+            $rrd->graph(
+              image          => $image_file_name,
+              vertical_label => 'Network Traffic',
+              draw           => {
+                file      => "file1.rrd",
+              },
+              draw        => {
+                file      => "file2.rrd",
+                type      => 'stack',
+                color     => '00FF00', # a green area stacked on top of the red one 
+                dsname    => "load",
+                cfunc     => 'AVERAGE'},
+            );
+
+        If a "file" parameter is specified per "draw", the defaults for
+        "dsname" and "cfunc" are fetched from this file, not from the file
+        that's attached to the "RRDTool::OO" object $rrd used.
+
+        On a global level, in addition to the "vertical_label" parameter
+        shown in the examples above, "graph" offers a plethora of
+        parameters:
+
+        "vertical_label", "title", "start", "end", "x_grid", "y_grid",
+        "alt_y_grid", "no_minor", "alt_y_mrtg", "alt_autoscale",
+        "alt_autoscale_max", "units_exponent", "units_length", "width",
+        "height", "interlaced", "imginfo", "imgformat", "overlay", "unit",
+        "lazy", "upper_limit", "logarithmic", "color", "no_legend",
+        "only_graph", "force_rules_legend", "title", "step".
+
+        Please check the RRDTool documentation for a detailed description on
+        what each of them is used for:
+
+            http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/rrdgraph.html
+
+    *$rrd->dump()*
+        *Not implemented, because it's not available via "RRDs". Once it is,
+        it will be available via "RRDTool" automatically.*
+
+    *my $hashref = $rrd->info()*
+        Grabs the RRD's meta data and returns it as a hashref, holding a map
+        of parameter names and their values.
+
+    *my $time = $rrd->last()*
+        Return the RRD's last update time.
+
+    *$rrd->restore(xml =* "file.xml")>
+        *Not implemented, because it's not available via "RRDs". Once it is,
+        it will be available via "RRDTool" automatically.*
+
+        Restore a RRD from a "dump". The "xml" parameter specifies the name
+        of the XML file containing the dump. If the optional flag
+        "range_check" is set to a true value, "restore" will make sure the
+        values in the RRAs do not exceed the limits defined for the
+        different datasources:
+
+            $rrd->restore(xml => "file.xml", range_check => 1);
+
+    *$rrd->tune( ... )*
+        Alter a RRD's data source configuration values:
+
+                # Set the heartbeat of the RRD's only datasource to 100
+            $rrd->tune(heartbeat => 100);
+
+                # Set the minimum of DS 'load' to 1
+            $rrd->tune(dsname => 'load', minimum => 1);
+
+                # Set the maximum of DS 'load' to 10
+            $rrd->tune(dsname => 'load', maximum => 10);
+
+                # Set the type of DS 'load' to AVERAGE
+            $rrd->tune(dsname => 'load', type => 'AVERAGE');
+
+                # Set the name of DS 'load' to 'load2'
+            $rrd->tune(dsname => 'load', name => 'load2');
 
     *$rrd->error_message()*
         Return the message of the last error that occurred while interacting
@@ -261,7 +341,7 @@ DESCRIPTION
   Development Status
     The following methods are not yet implemented:
 
-    "graph" (partially), "dump", "restore", "tune", "last", "info",
+    "dump", "restore" (just because they're not offered via RRDs),
     "rrdresize", "xport", "rrdcgi".
 
   Error Handling
@@ -335,13 +415,19 @@ INSTALLATION
         make install
 
 SEE ALSO
-    Tobi Oetiker's RRDTool homepage at
+    *   Tobi Oetiker's RRDTool homepage at
 
-        http://rrdtool.org
+            http://rrdtool.org
 
-    especially the manual page at
+        especially the manual page at
 
-        http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/index.html
+                http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/index.html
+
+    *   My articles on rrdtool in "Linux Magazin" (Germany) and "Linux
+        Magazine" (UK):
+
+            http://www.linux-magazin.de/Artikel/ausgabe/2004/06/perl/perl.html
+            http://www.linux-magazine.com/issue/44/Limiting_Data.pdf (not online yet)
 
 AUTHOR
     Mike Schilli, <m@perlmeister.com>
