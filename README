@@ -381,6 +381,32 @@ DESCRIPTION
 
             http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/rrdgraph.html
 
+        Sometimes it's useful to print max, min or average values of a given
+        graph at the bottom of the chart or to STDOUT. That's what "gprint"
+        and "print" options are for. In addition to the "draw" name
+        (defaults to the first draw), a consolidation function can be
+        specified: MIN, MAX, AVERAGE, LAST (defaults to AVERAGE). Note that
+        this is unrelated to the data source's consolidation function, it's
+        just applied on the graph print/gprint refer to. Finally, the
+        "format" parameter gives a printf-like template (defaults to
+        "Average=%lf": A call to
+
+            $rrd->graph(
+              image          => $image_file_name,
+              draw           => {
+                name      => "first_draw",
+                dsname    => "load",
+                cfunc     => 'MAX'},
+              gprint         => {
+                draw      => 'first_draw',
+                cfunc     => 'AVERAGE',
+                format    => 'Average=%lf',
+              },
+            );
+
+        prints "Average=x.xx" at the bottom of the graph, showing what the
+        average value of the graph is.
+
     *$rrd->dump()*
         *Available as of rrdtool 1.0.49*.
 
