@@ -8,11 +8,11 @@ my $count = 0;
 
     use Log::Log4perl qw(:easy);
 
-    Log::Log4perl->easy_init({
-        level    => $INFO, 
-        category => 'rrdtool',
-        layout   => '%m%n',
-    }); 
+#    Log::Log4perl->easy_init({
+#        level    => $INFO, 
+#        category => 'rrdtool',
+#        layout   => '%m%n',
+#    }); 
 
 ### START POD HERE ###
 
