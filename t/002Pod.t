@@ -53,6 +53,10 @@ my $count = 0;
       image          => "mygraph.png",
       vertical_label => 'My Salary',
       start          => time() - 10,
+      draw           => {
+          type  => "area",
+          color => '0000FF',
+      }
     );
 ### END POD HERE ###
 
