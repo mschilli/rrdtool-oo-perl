@@ -1,10 +1,11 @@
 
+0.02 05/16/2004
+    (ms) used rrdtool info for meta queries
+
 0.01 05/12/2004
     (ms) Where it all began.
 
 TODO:
 
-* test multiple archives
-* Test: rrd write-protected
 * Extra test case file for mult values
 * fetch_start/next iterator with saved timestamp, without caching all values
