@@ -8,3 +8,4 @@ README
 t/001Basic.t
 t/002Pod.t
 t/003Discover.t
+t/004Template.t
