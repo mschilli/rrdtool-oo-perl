@@ -34,7 +34,7 @@ our $OPTIONS = {
                                      alt_autoscale alt_autoscale_max 
                                      units_exponent units_length width
                                      height interlaced imginfo imgformat
-                                     overlay unit lazy upper_limit
+                                     overlay unit lazy upper_limit lower_limit
                                      logarithmic color no_legend only_graph
                                      force_rules_legend title step draw
                                     )],
