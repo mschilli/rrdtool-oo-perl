@@ -6,7 +6,7 @@ use Log::Log4perl qw(:easy);
 ##############################################
 # Configuration
 ##############################################
-my $VIEW     = 1;     # Display graphs
+my $VIEW     = 0;     # Display graphs
 my $LOGLEVEL = $OFF;  # Level of detail
 ##############################################
 
