@@ -510,14 +510,16 @@ sub meta_data_discover {
 
     foreach my $key (keys %$hashref){
 
-        if($key =~ /^rra\[\d+\]\.cf = "(.*?)"/) {
-            $self->meta_data("cfuncs", $1, 1);
+        if($key =~ /^rra\[\d+\]\.cf/) {
+            DEBUG "rrdinfo: rra found: $key";
+            $self->meta_data("cfuncs", $hashref->{$key}, 1);
             next;
-        }
-        
-        if($key =~ /^ds\[(.*?)]\./) {
+        } elsif ($key =~ /^ds\[(.*?)]\./) {
+            DEBUG "rrdinfo: da found: $key";
             $self->meta_data("dsnames", $1, 1);
             next;
+        } else {
+            DEBUG "rrdinfo: no match: $key";
         }
     }
 

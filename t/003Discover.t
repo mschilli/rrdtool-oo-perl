@@ -35,6 +35,10 @@ $rrd->create(
                     },
 );
 
+    # start from scratch with a new object
+    # to the same rrd file
+$rrd = RRDTool::OO->new(file => "rrdtooltest.rrd");
+
 $rrd->meta_data_discover();
 my $dsnames = $rrd->meta_data("dsnames");
 my $cfuncs  = $rrd->meta_data("cfuncs");

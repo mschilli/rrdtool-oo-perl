@@ -1,4 +1,7 @@
 
+0.03 05/18/2004
+    (ms) fixed bug with discovery of CFs
+
 0.02 05/16/2004
     (ms) used rrdtool info for meta queries
 
