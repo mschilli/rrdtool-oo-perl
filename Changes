@@ -1,4 +1,11 @@
 
+0.11 (01/05/2005)
+    (ms) Added suggestion by Richard Lippmann <lippmann@sprachtheorie.de>
+         to allow for invisible graphs, just used as base for later 
+         'cdef' calculations. Since leaving 'type' out will have
+         RRDTool::OO default to 'line', type => 'hidden' is used to
+         indicate the graph shouldn't be drawn. 
+
 0.10 (11/20/2004)
     (ms) Added legends to graph()
     (ms) Maxence Gerbedoen <maxxenceg@wanadoo.fr> suggested a patch to 

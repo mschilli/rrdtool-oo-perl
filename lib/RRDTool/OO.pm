@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -525,7 +525,9 @@ sub graph {
         my $draw_attributes = ":$_->{name}#$_->{color}";
         $draw_attributes .= ":$_->{legend}" if length $_->{legend};
 
-        if($_->{type} eq "line") {
+        if($_->{type} eq "hidden") {
+            # Invisible graph
+        } elsif($_->{type} eq "line") {
             push @options, "LINE$_->{thickness}$draw_attributes";
         } elsif($_->{type} eq "area") {
             push @options, "AREA$draw_attributes";
@@ -1008,7 +1010,7 @@ along with all values as a list.
 
 =item I<$rrd-E<gt>graph( ... )>
 
-If there's only one data source in the RRD, drawing nice graph in
+If there's only one data source in the RRD, drawing a nice graph in
 an image file on disk is as easy as
 
     $rrd->graph(
@@ -1037,7 +1039,7 @@ be clear:
 
 As always, C<RRDTool::OO> will pick reasonable defaults for parameters
 not specified. The values for data source and consolidation function
-are default to the first values it finds in the RRD.
+default to the first values it finds in the RRD.
 If there are multiple datasources in the RRD or multiple archives
 with different values for C<cfunc>, just specify explicitely which
 one to draw:
@@ -1052,7 +1054,9 @@ one to draw:
         cfunc     => 'MAX'},
     );
 
-If C<draw> doesn't define a C<type>, it defaults to C<"line">. Other
+If C<draw> doesn't define a C<type>, it defaults to C<"line">. If
+you don't want to define a type (because the graph shouldn't drawn), 
+use C<type =E<gt> "hidden">. Other
 values are C<"area"> for solid colored areas and C<"stack"> for 
 graphical values stacked on top of each other.
 And you can certainly have more than one graph in the picture:
@@ -1073,7 +1077,7 @@ And you can certainly have more than one graph in the picture:
     );
 
 Graphs may assemble data from different RRD files. Just specify
-which file you want to draw the data from per C<draw>:
+which file you want to draw the data from, using C<draw>:
 
     $rrd->graph(
       image          => $image_file_name,
@@ -1220,7 +1224,7 @@ map of parameter names and their values.
 
 Return the RRD's last update time.
 
-=item I<$rrd-E<gt>restore(xml => "file.xml")>
+=item I<$rrd-E<gt>restore(xml =E<gt> "file.xml")>
 
 I<Available as of rrdtool 1.0.49>.
 
@@ -1261,7 +1265,6 @@ with C<RRDTool::OO>.
 
 The following methods are not yet implemented:
 
-C<dump>, C<restore> (just because they're not offered via RRDs),
 C<rrdresize>, C<xport>, C<rrdcgi>.
 
 =head2 Error Handling

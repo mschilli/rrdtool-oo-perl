@@ -1,5 +1,5 @@
 ######################################################################
-    RRDTool::OO 0.10
+    RRDTool::OO 0.11
 ######################################################################
 
 NAME
@@ -225,8 +225,8 @@ DESCRIPTION
         along with all values as a list.
 
     *$rrd->graph( ... )*
-        If there's only one data source in the RRD, drawing nice graph in an
-        image file on disk is as easy as
+        If there's only one data source in the RRD, drawing a nice graph in
+        an image file on disk is as easy as
 
             $rrd->graph(
               image          => $image_file_name,
@@ -253,8 +253,8 @@ DESCRIPTION
 
         As always, "RRDTool::OO" will pick reasonable defaults for
         parameters not specified. The values for data source and
-        consolidation function are default to the first values it finds in
-        the RRD. If there are multiple datasources in the RRD or multiple
+        consolidation function default to the first values it finds in the
+        RRD. If there are multiple datasources in the RRD or multiple
         archives with different values for "cfunc", just specify explicitely
         which one to draw:
 
@@ -268,10 +268,11 @@ DESCRIPTION
                 cfunc     => 'MAX'},
             );
 
-        If "draw" doesn't define a "type", it defaults to "line". Other
-        values are "area" for solid colored areas and "stack" for graphical
-        values stacked on top of each other. And you can certainly have more
-        than one graph in the picture:
+        If "draw" doesn't define a "type", it defaults to "line". If you
+        don't want to define a type (because the graph shouldn't drawn), use
+        "type => "hidden"". Other values are "area" for solid colored areas
+        and "stack" for graphical values stacked on top of each other. And
+        you can certainly have more than one graph in the picture:
 
             $rrd->graph(
               image          => $image_file_name,
@@ -289,7 +290,7 @@ DESCRIPTION
             );
 
         Graphs may assemble data from different RRD files. Just specify
-        which file you want to draw the data from per "draw":
+        which file you want to draw the data from, using "draw":
 
             $rrd->graph(
               image          => $image_file_name,
@@ -407,7 +408,7 @@ DESCRIPTION
     *my $time = $rrd->last()*
         Return the RRD's last update time.
 
-    *$rrd->restore(xml =* "file.xml")>
+    *$rrd->restore(xml => "file.xml")*
         *Available as of rrdtool 1.0.49*.
 
         Restore a RRD from a "dump". The "xml" parameter specifies the name
@@ -443,7 +444,6 @@ DESCRIPTION
   Development Status
     The following methods are not yet implemented:
 
-    "dump", "restore" (just because they're not offered via RRDs),
     "rrdresize", "xport", "rrdcgi".
 
   Error Handling
