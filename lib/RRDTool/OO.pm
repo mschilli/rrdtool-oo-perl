@@ -877,6 +877,28 @@ the calculated average, as indicated by the parameter C<cfunc>
 (Consolidation Function, CF). Other options for C<cfunc> are 
 C<MIN>, C<MAX>, and C<LAST>.
 
+If you're defining multiple data sources or multiple archives, just
+provide them in this manner:
+
+       # Define the RRD
+    my $rc = $rrd->create(
+        step        => 60,
+        data_source => { name      => 'load1',
+                         type      => 'GAUGE',
+                       },
+        data_source => { name      => 'load2',
+                         type      => 'GAUGE',
+                       },
+        archive     => { rows      => 5,
+                         cpoints   => 10,
+                         cfunc     => 'AVERAGE',
+                        },
+        archive     => { rows      => 5,
+                         cpoints   => 10,
+                         cfunc     => 'MAX',
+                        },
+    );
+
 =item I<$rrd-E<gt>update( ... ) >
 
 Update the round robin database with a new data sample, 

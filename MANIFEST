@@ -13,3 +13,4 @@ t/004Template.t
 t/005Graph.t
 t/006Tune.t
 t/007Dump.t
+t/008Mult.t

@@ -121,6 +121,28 @@ DESCRIPTION
         (Consolidation Function, CF). Other options for "cfunc" are "MIN",
         "MAX", and "LAST".
 
+        If you're defining multiple data sources or multiple archives, just
+        provide them in this manner:
+
+               # Define the RRD
+            my $rc = $rrd->create(
+                step        => 60,
+                data_source => { name      => 'load1',
+                                 type      => 'GAUGE',
+                               },
+                data_source => { name      => 'load2',
+                                 type      => 'GAUGE',
+                               },
+                archive     => { rows      => 5,
+                                 cpoints   => 10,
+                                 cfunc     => 'AVERAGE',
+                                },
+                archive     => { rows      => 5,
+                                 cpoints   => 10,
+                                 cfunc     => 'MAX',
+                                },
+            );
+
     *$rrd->update( ... ) *
         Update the round robin database with a new data sample, consisting
         of a value and an optional time stamp. If called with a single
