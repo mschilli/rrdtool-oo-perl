@@ -23,12 +23,24 @@ $rrd->create(
      step        => 1,  # one-second intervals
      data_source => { name      => "mydatasource",
                       type      => "GAUGE" },
-     archive     => { rows      => 5 });
+     data_source => { name      => "myotherdatasource",
+                      type      => "GAUGE" },
+     archive     => { rows      => 5,
+                      cfunc     => 'MAX',
+                      cpoints   => 10,
+                    },
+     archive     => { rows      => 5,
+                      cfunc     => 'MIN',
+                      cpoints   => 10,
+                    },
+);
 
 $rrd->meta_data_discover();
 my $dsnames = $rrd->meta_data("dsnames");
 my $cfuncs  = $rrd->meta_data("cfuncs");
-is("@$cfuncs", "MAX", "check cfunc");
-is("@$dsnames", "mydatasource", "check dsname");
+like("@$cfuncs", qr/MAX/, "check cfunc");
+like("@$cfuncs", qr/MIN/, "check cfunc");
+like("@$dsnames", qr/mydatasource/, "check dsname");
+like("@$dsnames", qr/myotherdatasource/, "check dsname");
 
 END { unlink "rrdtooltest.rrd"; }
