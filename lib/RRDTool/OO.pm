@@ -72,6 +72,7 @@ my %RRDs_functions = (
     fetch  => \&RRDs::fetch,
     update => \&RRDs::update,
     graph  => \&RRDs::graph,
+    info   => \&RRDs::info,
 );
 
 #################################################
@@ -484,21 +485,39 @@ sub meta_data_discover {
 #################################################
     my($self) = @_;
 
-    local($self->{raise_error});
+    #==========================================
+    # rrdtoo info output
+    #==========================================
+    #filename = "myrrdfile.rrd"
+    #rrd_version = "0001"
+    #step = 1
+    #last_update = 1084773097
+    #ds[mydatasource].type = "GAUGE"
+    #ds[mydatasource].minimal_heartbeat = 2
+    #ds[mydatasource].min = NaN
+    #ds[mydatasource].max = NaN
+    #ds[mydatasource].last_ds = "UNKN"
+    #ds[mydatasource].value = 0.0000000000e+00
+    #ds[mydatasource].unknown_sec = 0
+    #rra[0].cf = "MAX"
+    #rra[0].rows = 5
+    #rra[0].pdp_per_row = 1
+    #rra[0].xff = 5.0000000000e-01
+    #rra[0].cdp_prep[0].value = NaN
+    #rra[0].cdp_prep[0].unknown_datapoints = 0
 
-        # Disable throwing an error for a moment
-    $self->{raise_error} = 0;
+    my $hashref = $self->RRDs_execute("info", $self->{file});
 
-    for my $cfunc (qw(AVERAGE MAX MIN LAST)) {
-        my ($time, $step, $dsnames, $data) =
-             $self->RRDs_execute("fetch", $self->{file}, $cfunc, 
-                 "--start", time()-1);
-        next unless defined $time;
-        DEBUG "Discovered cfunc $cfunc and dsnames=(@$dsnames)";
+    foreach my $key (keys %$hashref){
 
-        $self->meta_data("cfuncs", $cfunc, 1);
-        for my $dsname (@$dsnames) {
-            $self->meta_data("dsnames", $dsname, 1);
+        if($key =~ /^rra\[\d+\]\.cf = "(.*?)"/) {
+            $self->meta_data("cfuncs", $1, 1);
+            next;
+        }
+        
+        if($key =~ /^ds\[(.*?)]\./) {
+            $self->meta_data("dsnames", $1, 1);
+            next;
         }
     }
 
@@ -554,6 +573,8 @@ RRDTool::OO - Object-oriented interface to RRDTool
     );
 
 =head1 DESCRIPTION
+
+B<Note: This module is under development.>
 
 C<RRDTool::OO> is an object-oriented interface to Tobi Oetiker's 
 round robin database tool I<rrdtool>. It uses I<rrdtool>'s 
