@@ -779,7 +779,8 @@ data sources and one or more archives:
          archive     => { rows      => 5 });
 
 This defines a RRD database with a step rate of 60 seconds in between
-primary data points. 
+primary data points. Additionally, the RRD start time can be specified
+by specifying a C<start> parameter.
 
 It also sets up one data source named C<my_data_source>
 of type C<GAUGE>, telling I<rrdtool> to use values of data samples 
