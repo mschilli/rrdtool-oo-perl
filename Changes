@@ -1,5 +1,8 @@
 
-0.05 (not yet released)
+0.06 (06/21/2004)
+    (ms) added 'start' param in create() docs
+
+0.05 (05/26/2004)
     (ms) added support for dump() and restore(). Test cases in
          t/007Dump.t will wait until these functions are 
          available in rrdtool, and are skipped until then.

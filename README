@@ -1,5 +1,5 @@
 ######################################################################
-    RRDTool::OO 0.05
+    RRDTool::OO 0.06
 ######################################################################
 
 NAME
@@ -77,7 +77,8 @@ DESCRIPTION
                  archive     => { rows      => 5 });
 
         This defines a RRD database with a step rate of 60 seconds in
-        between primary data points.
+        between primary data points. Additionally, the RRD start time can be
+        specified by specifying a "start" parameter.
 
         It also sets up one data source named "my_data_source" of type
         "GAUGE", telling *rrdtool* to use values of data samples as-is,
