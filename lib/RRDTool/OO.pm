@@ -35,6 +35,7 @@ our $OPTIONS = {
                                      units_exponent units_length width
                                      height interlaced imginfo imgformat
                                      overlay unit lazy upper_limit lower_limit
+                                     rigid
                                      logarithmic color no_legend only_graph
                                      force_rules_legend title step draw
                                      print gprint
@@ -1188,6 +1189,7 @@ C<imgformat>,
 C<overlay>, 
 C<unit>, 
 C<lazy>, 
+C<rigid>,
 C<upper_limit>, 
 C<logarithmic>, 
 C<color>, 

@@ -1,4 +1,7 @@
 
+0.12 2005/05/02
+    (ms) Added 'rigid' option to graph.
+
 0.11 (01/05/2005)
     (ms) Added suggestion by Richard Lippmann <lippmann@sprachtheorie.de>
          to allow for invisible graphs, just used as base for later 
