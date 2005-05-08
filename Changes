@@ -1,5 +1,10 @@
 
-0.12 2005/05/02
+0.12 (01/20/2005)
+
+???    (ms) Added code written by browserUk@perlmonks to transform infix
+         notation to RPN. Used by CDEF
+
+    (ms) Makefile.PL dependencies version number changed from undef to 0
     (ms) Added 'rigid' option to graph.
 
 0.11 (01/05/2005)
@@ -67,7 +72,4 @@
 
 TODO:
 
-* Why doesn't RRDs offer dump()/restore() methods?
-* some less frequently used graph parameters like CDEF, PRINT, x-grid
-  aren't integrated yet or could be integrated more OO-like.
 * fetch_start/next iterator with saved timestamp, without caching all values
