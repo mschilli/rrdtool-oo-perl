@@ -7,7 +7,7 @@ use Log::Log4perl qw(:easy);
 # Configuration
 ##############################################
 my $VIEW     = 0;     # Display graphs
-my $LOGLEVEL = $OFF;  # Level of detail
+my $LOGLEVEL = $ERROR;  # Level of detail
 ##############################################
 
 sub view {
@@ -15,7 +15,7 @@ sub view {
     system("xv $_[0]");
 }
 
-Log::Log4perl->easy_init({level => $OFF, layout => "%m%n", 
+Log::Log4perl->easy_init({level => $LOGLEVEL, layout => "%m%n", 
                           category => 'rrdtool',
                           file => 'stdout'});
 
@@ -326,6 +326,47 @@ unlink "mygraph.png";
       },
       gprint         => {
       },
+    );
+
+view("mygraph.png");
+ok(-f "mygraph.png", "Image exists");
+unlink "mygraph.png";
+
+VRULE:
+######################################################################
+# Test comment, vrule
+######################################################################
+    $rrd->graph(
+      image          => "mygraph.png",
+      vertical_label => 'My Salary',
+      start          => $start_time,
+      end            => $start_time + $nof_iterations * 60,
+      draw           => {
+        type      => 'line',
+        color     => 'FF0000', # red line
+        name      => 'firstgraph',
+        legend    => 'Unmodified Load',
+      },
+      gprint         => {
+        draw      => 'firstgraph',
+        cfunc     => 'AVERAGE',
+        format    => 'Average=%lf',
+      },
+      comment     => "Remember, 83% of all statistics are made up",
+      vrule       => {
+                time   => $start_time + 10 * 60,
+                legend => "vrule1",
+                color  => "#ff0000",
+      },
+      vrule       => {
+                time   => $start_time + 20 * 60,
+                legend => "vrule2",
+                color  => "#00ff00",
+      },
+#      font => { name    => "/usr/X11R6/lib/X11/fonts/TTF/VeraBd.ttf",
+#                size    => 32,
+#                element => "comment",
+#              },
     );
 
 view("mygraph.png");

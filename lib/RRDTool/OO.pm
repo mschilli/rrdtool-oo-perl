@@ -38,7 +38,7 @@ our $OPTIONS = {
                                      rigid
                                      logarithmic color no_legend only_graph
                                      force_rules_legend title step draw
-                                     print gprint
+                                     print gprint vrule comment font
                                     )],
                     draw      => {
                       mandatory => [qw()],
@@ -50,6 +50,10 @@ our $OPTIONS = {
                       optional  => [qw(back canvas shadea shadeb
                                        grid mgrid font frame arrow)],
                     },
+                    font      => {
+                      mandatory => [qw(name)],
+                      optional  => [qw(element size)],
+                    },
                     print      => {
                       mandatory => [qw()],
                       optional  => [qw(draw format cfunc)],
@@ -57,6 +61,14 @@ our $OPTIONS = {
                     gprint     => {
                       mandatory => [qw()],
                       optional  => [qw(draw format cfunc)],
+                    },
+                    vrule      => {
+                      mandatory => [qw(time)],
+                      optional  => [qw(color legend)],
+                    },
+                    comment    => {
+                      mandatory => [],
+                      optional  => [],
                     },
                   },
     fetch_start=> { mandatory => [qw()],
@@ -450,6 +462,8 @@ sub graph {
 
     my @colors = ();
     my @prints = ();
+    my @vrules = ();
+    my @fonts  = ();
 
     my @draws = ();
     my %options_hash = @options;
@@ -473,12 +487,27 @@ sub graph {
         } elsif($options[$i] eq "gprint") {
             check_options "graph/gprint", [%{$options[$i+1]}];
                 push @prints, [$options[$i], $options[$i+1]];
+        } elsif($options[$i] eq "comment") {
+                if ( ref($options[$i+1]) eq 'ARRAY' ) {
+                    push @prints, [$options[$i], $_] foreach @{$options[$i+1]};
+                }
+                else {
+                    push @prints, [$options[$i], $options[$i+1]];
+                }
+        } elsif($options[$i] eq "vrule") {
+            check_options "graph/vrule", [%{$options[$i+1]}];
+                push @vrules, [$options[$i], $options[$i+1]];
+        } elsif($options[$i] eq "font") {
+                push @fonts,$options[$i+1];
         }
     }
 
     delete $options_hash{color};
+    delete $options_hash{vrule};
     delete $options_hash{print};
     delete $options_hash{gprint};
+    delete $options_hash{comment};
+    delete $options_hash{font};
 
     @options = add_dashes(\%options_hash);
 
@@ -500,6 +529,17 @@ sub graph {
 
         # Push a pseudo draw if there's none.
     @draws = ({}) unless @draws;
+
+    for(@fonts) {
+
+        check_options "graph/font", [%$_];
+
+        $_->{size}     ||= 8;
+        $_->{element}  ||= 'default';
+        $_->{name}     ||= '';       # but this breaks. Need to issue an error eventually.
+
+        push @options,"--font", uc($_->{element}) . ":" . $_->{size} . ":" . $_->{name};
+    }
 
     for(@draws) {
 
@@ -564,15 +604,29 @@ sub graph {
         $draw_count++;
     }
 
-        # Push all prints and gprints
-    for(@prints) {
-        $_->[1]->{draw}   ||= $draws[0]->{name};
-        $_->[1]->{cfunc}  ||= "AVERAGE";
-        $_->[1]->{format} ||= "Average=%lf";
+    # Push vrules
+    for(@vrules) {
+        $_->[1]->{color} ||= "#000000";
         push @options, uc($_->[0]) . ":" .
-                       $_->[1]->{draw} . ":" .
-                       $_->[1]->{cfunc} . ":" .
-                       $_->[1]->{format};
+                       $_->[1]->{time} .
+                       $_->[1]->{color} .
+                       ( $_->[1]->{legend} ?  ":" . $_->[1]->{legend} : "");
+    }
+    
+        # Push all prints, gprints and comments
+    for(@prints) {
+        if ( $_->[0] eq 'comment' ) {
+            push @options, uc($_->[0]) . ":" . $_->[1];
+        }
+        else {
+            $_->[1]->{draw}   ||= $draws[0]->{name};
+            $_->[1]->{cfunc}  ||= "AVERAGE";
+            $_->[1]->{format} ||= "Average=%lf";
+            push @options, uc($_->[0]) . ":" .
+                           $_->[1]->{draw} . ":" .
+                           $_->[1]->{cfunc} . ":" .
+                           $_->[1]->{format};
+        }
     }
     
     push @options, @colors;
@@ -1225,6 +1279,17 @@ C<frame> and C<arrow>:
       ...
     );
 
+Fonts for various graph elements may be specified in C<font> blocks,
+which must either name a TrueType font file or a PDF/Postscript font name.
+You may optionally specify a size and element name (defaults to DEFAULT,
+which to RRD means "use this font for everything).  Example:
+
+    font  => {
+        name => "/usr/openwin/lib/X11/fonts/TrueType/GillSans.ttf",
+        size => 16,
+        element => "title"
+    }
+
 Please check the RRDTool documentation for a detailed description
 on what each option is used for:
 
@@ -1255,6 +1320,46 @@ C<format> parameter gives a printf-like template (defaults to
 
 prints "Average=x.xx" at the bottom of the graph, showing what the
 average value of the graph is.
+
+To write comments to the graph (like gprints, but with no associated
+RRD data source) use C<comment>, like this:
+
+    $rrd->graph(
+      image          => $image_file_name,
+      draw           => {
+        name      => "first_draw",
+        dsname    => "load",
+        cfunc     => 'MAX'},
+      comment        => "Remember, 83% of all statistics are made up",
+      gprint         => {
+        draw      => 'first_draw',
+        cfunc     => 'AVERAGE',
+        format    => 'Average=%lf',
+      },
+    );
+
+Multiple comment lines can be specified in a single comment specification
+like this:
+
+     comment => [ "All the king's horses and all the king's men\\n",
+                  "couldn't put Humpty together again.\\n",
+                ],
+
+Vertical rules (lines) may be placed into the graph by using a C<vrule>
+block like so:
+
+       vrule => { time => time()-3600, }
+
+These can be useful for indicating when the most recent day on the graph
+started, for example.
+
+vrules can have a color specification (they default to black) and also
+an optional legend string specified:
+
+      vrule => { time => $first_thing_today,
+                 color => "#0000ff",
+                 legend => "When we crossed midnight"
+               },
 
 =item I<$rrd-E<gt>dump()>
 
