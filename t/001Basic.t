@@ -49,7 +49,7 @@ eval { $rrd->create(
                    },
 ) };
 
-like($@, qr/Illegal parameter 'name'/, "create missing hearbeat");
+like($@, qr/Illegal parameter 'name'/, "create missing heartbeat");
 
 ######################################################################
 # Run the test example in
@@ -106,7 +106,7 @@ while(my($time, $val) = $rrd->fetch_next()) {
 is($count, 5, "items found");
 
     # long-term archive
-@expected = qw(1080460800:3 1080461100:3.5 1080461400:4 1080461700:4.5 1080462000:5 1080462300:5.5 1080462600:6);
+@expected = qw(1080461100:3.5 1080461400:4 1080461700:4.5 1080462000:5 1080462300:5.5 1080462600:6);
 
 $rrd->fetch_start(start => $end_time - 30*60, cfunc => 'MAX');
 $rrd->fetch_skip_undef();
@@ -116,7 +116,7 @@ while(my($time, $val) = $rrd->fetch_next()) {
     is("$time:$val", shift @expected, "match expected value");
     $count++;
 }
-is($count, 7, "items found");
+is($count, 6, "items found");
 
 ######################################################################
 # check info for this rrd
