@@ -1,5 +1,5 @@
 
-0.12 (01/20/2005)
+0.12 (07/07/2005)
     (ms) Steve van der Burg added vrule, comment, and font options
     (ms) Makefile.PL dependencies version number changed from undef to 0
     (ms) Added 'rigid' option to graph.
