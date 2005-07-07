@@ -113,6 +113,8 @@ $rrd->fetch_skip_undef();
 $count = 0;
 while(my($time, $val) = $rrd->fetch_next()) {
     last unless defined $val;
+        # older rrdtool installations show an additional value
+    next if "$time:$val" eq "1080460800:3";
     is("$time:$val", shift @expected, "match expected value");
     $count++;
 }
