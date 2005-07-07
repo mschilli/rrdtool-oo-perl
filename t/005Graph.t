@@ -365,7 +365,7 @@ VRULE:
       },
 #      font => { name    => "/usr/X11R6/lib/X11/fonts/TTF/VeraBd.ttf",
 #                size    => 32,
-#                element => "comment",
+#                element => "title",
 #              },
     );
 
