@@ -58,15 +58,13 @@ DESCRIPTION
     "RRDTool::OO" abstracts away implementation details of the RRD engine,
     uses easy to memorize named parameters and sets meaningful defaults for
     parameters not needed in simple cases. For the experienced user,
-    however, it provides full access to *rrdtool*'s API. (Please check the
-    Development Status entry elsewhere in this document to verify how much
-    of it has been implemented yet, though, since this module is under
-    development :).
+    however, it provides full access to *rrdtool*'s API. (Please check
+    "Development Status" to verify how much of it has been implemented yet,
+    though, since this module is under development :).
 
   FUNCTIONS
-
     *my $rrd = RRDTool::OO->new( file => $file )*
-        The constructor hooks up with an existing RRD database file "$file",
+        The constructor hooks up with an existing RRD database file $file,
         but doesn't create a new one if none exists. That's what the
         "create()" methode is for. Returns a "RRDTool::OO" object, which can
         be used to get access to the following methods.
@@ -153,13 +151,13 @@ DESCRIPTION
 
             $rrd->update($value);
 
-        then the current timestamp and the defined "$value" will be used. If
+        then the current timestamp and the defined $value will be used. If
         "update" is called with a named parameter list like in
 
             $rrd->update(time => $time, value => $value);
 
-        then the given timestamp "$time" is used along with the given value
-        "$value".
+        then the given timestamp $time is used along with the given value
+        $value.
 
         When updating multiple data sources, use the "values" parameter
         (instead of "value") and pass an arrayref:
@@ -270,12 +268,11 @@ DESCRIPTION
                 cfunc     => 'MAX'},
             );
 
-        If "draw" doesn't define a "type", it defaults to ""line"". If you
+        If "draw" doesn't define a "type", it defaults to "line". If you
         don't want to define a type (because the graph shouldn't drawn), use
-        "type => "hidden"". Other values are ""area"" for solid colored
-        areas and ""stack"" for graphical values stacked on top of each
-        other. And you can certainly have more than one graph in the
-        picture:
+        "type => "hidden"". Other values are "area" for solid colored areas
+        and "stack" for graphical values stacked on top of each other. And
+        you can certainly have more than one graph in the picture:
 
             $rrd->graph(
               image          => $image_file_name,
@@ -314,7 +311,7 @@ DESCRIPTION
 
         If a "file" parameter is specified per "draw", the defaults for
         "dsname" and "cfunc" are fetched from this file, not from the file
-        that's attached to the "RRDTool::OO" object "$rrd" used.
+        that's attached to the "RRDTool::OO" object $rrd used.
 
         Graphs may also consist of algebraic calculations of previously
         defined graphs. In this case, graphs derived from real data sources
@@ -345,7 +342,7 @@ DESCRIPTION
         "cdef", performing calculations on a previously defined draw named
         "firstgraph". The calculation is specified using RRDTool's reverse
         polish notation, where instructions are separated by commas
-        (""firstgraph,2,*"" simply multiplies "firstgraph"'s values by 2).
+        ("firstgraph,2,*" simply multiplies "firstgraph"'s values by 2).
 
         On a global level, in addition to the "vertical_label" parameter
         shown in the examples above, "graph" offers a plethora of
@@ -523,13 +520,11 @@ DESCRIPTION
         with "RRDTool::OO".
 
   Development Status
-
     The following methods are not yet implemented:
 
     "rrdresize", "xport", "rrdcgi".
 
   Error Handling
-
     By default, "RRDTool::OO"'s methods will throw fatal errors (as in:
     they're calling "die") if the underlying "RRDs::*" commands indicate
     failure.
@@ -547,7 +542,6 @@ DESCRIPTION
     successful and "undef" if an error occurs).
 
   Debugging
-
     "RRDTool::OO" is "Log::Log4perl" enabled, so if you want to know what's
     going on under the hood, just turn it on:
 
@@ -559,7 +553,7 @@ DESCRIPTION
 
     If you're interested particularily in *rrdtool* commands issued by
     "RRDTool::OO" while you're operating it, just enable the category
-    ""rrdtool"":
+    "rrdtool":
 
         Log::Log4perl->easy_init({
             level    => $INFO, 
