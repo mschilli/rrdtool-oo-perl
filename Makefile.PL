@@ -3,6 +3,8 @@ use ExtUtils::MakeMaker;
 use File::Basename;
 
 # Check if RRDs is installed
+my $v = rrdtool_version();
+
 eval { require RRDs; };
 
     # (1) libcgi is missing on most Linux/FreeBSD systems, and we
@@ -14,10 +16,10 @@ my $CONFIGURE_OPTS = "--prefix=/usr --disable-tcl --disable-rrdcgi";
 my $DIST_URL = 
 "http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/pub/rrdtool.tar.gz";
 
-if($@) {
+if($@ or !$v or $v < 1.2) {
     print <<EOT;
-This module requires the RRDs module to be installed. It is 
-available in the rrdtool distribution:
+This module requires rrdtool 1.2.x and the RRDs module to be 
+installed. They are available in the rrdtool distribution:
  $DIST_URL
 EOT
 
@@ -78,6 +80,35 @@ sub note {
     print "# You can download the rrdtool library at      #\n";
     print "# $DIST_URL\n";
     print "# and compile it using                         #\n";
-    print "#   $CONFIGURE_OPTIONS\n";
+    print "#   $CONFIGURE_OPTS\n";
     print "################################################\n";
+}
+
+##################################################################
+sub rrdtool_version {
+##################################################################
+
+    my @paths = split /:/, $ENV{PATH};
+    push @paths, qw(/usr/bin /usr/local/bin);
+
+    my $path;
+
+    for(@paths) {
+        if(-x "$_/rrdtool") {
+            $path = "$_/rrdtool";
+            last;
+        }
+    }
+
+    return undef unless $path;
+
+    open PIPE, "$path --version |" or die "Cannot run $path";
+    my $data = join '', <PIPE>;
+    close PIPE;
+
+    if($data =~ /RRDtool (\d+\.\d+)/) {
+        return $1;
+    }
+
+    return undef;
 }
