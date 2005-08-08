@@ -1,4 +1,11 @@
 
+TODO: * 1.2.11 install (/usr/local/rrdtool-1..)
+      * perl install
+      * prefix configurable
+
+0.13 2005/08/07
+    (ms) Added line, area, tick, and shift to graph method.
+
 0.12 (07/07/2005)
     (ms) Steve van der Burg added vrule, comment, and font options
     (ms) Makefile.PL dependencies version number changed from undef to 0

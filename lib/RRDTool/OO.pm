@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -38,6 +38,7 @@ our $OPTIONS = {
                                      rigid
                                      logarithmic color no_legend only_graph
                                      force_rules_legend title step draw
+                                     line area
                                      print gprint vrule comment font
                                     )],
                     draw      => {
@@ -69,6 +70,22 @@ our $OPTIONS = {
                     comment    => {
                       mandatory => [],
                       optional  => [],
+                    },
+                    line        => {
+                      mandatory => [qw(value)],
+                      optional  => [qw(width color legend stack)],
+                    },
+                    area        => {
+                      mandatory => [qw(value)],
+                      optional  => [qw(color legend stack)],
+                    },
+                    tick        => {
+                      mandatory => [qw(vname color)],
+                      optional  => [qw(legend fraction)],
+                    },
+                    shift       => {
+                      mandatory => [qw(vname offset)],
+                      optional  => [qw()],
                     },
                   },
     fetch_start=> { mandatory => [qw()],
@@ -483,22 +500,23 @@ sub graph {
             }
         } elsif($options[$i] eq "print") {
             check_options "graph/print", [%{$options[$i+1]}];
-                push @prints, [$options[$i], $options[$i+1]];
+            push @prints, [$options[$i], $options[$i+1]];
         } elsif($options[$i] eq "gprint") {
             check_options "graph/gprint", [%{$options[$i+1]}];
-                push @prints, [$options[$i], $options[$i+1]];
+            push @prints, [$options[$i], $options[$i+1]];
         } elsif($options[$i] eq "comment") {
-                if ( ref($options[$i+1]) eq 'ARRAY' ) {
-                    push @prints, [$options[$i], $_] foreach @{$options[$i+1]};
-                }
-                else {
-                    push @prints, [$options[$i], $options[$i+1]];
-                }
+            push @prints, option_expand(@options[$i, $i+1]);
+        } elsif($options[$i] eq "line") {
+            check_options "graph/line", [%{$options[$i+1]}];
+            push @prints, option_expand(@options[$i, $i+1]);
+        } elsif($options[$i] eq "area") {
+            check_options "graph/area", [%{$options[$i+1]}];
+            push @prints, option_expand(@options[$i, $i+1]);
         } elsif($options[$i] eq "vrule") {
             check_options "graph/vrule", [%{$options[$i+1]}];
-                push @vrules, [$options[$i], $options[$i+1]];
+            push @vrules, [$options[$i], $options[$i+1]];
         } elsif($options[$i] eq "font") {
-                push @fonts,$options[$i+1];
+            push @fonts,$options[$i+1];
         }
     }
 
@@ -508,6 +526,8 @@ sub graph {
     delete $options_hash{gprint};
     delete $options_hash{comment};
     delete $options_hash{font};
+    delete $options_hash{line};
+    delete $options_hash{area};
 
     @options = add_dashes(\%options_hash);
 
@@ -536,9 +556,11 @@ sub graph {
 
         $_->{size}     ||= 8;
         $_->{element}  ||= 'default';
-        $_->{name}     ||= '';       # but this breaks. Need to issue an error eventually.
+        $_->{name}     ||= '';       # but this breaks. 
+                                     # Need to issue an error eventually.
 
-        push @options,"--font", uc($_->{element}) . ":" . $_->{size} . ":" . $_->{name};
+        push @options,"--font", uc($_->{element}) . ":" .
+                                $_->{size} . ":" . $_->{name};
     }
 
     for(@draws) {
@@ -617,8 +639,28 @@ sub graph {
     for(@prints) {
         if ( $_->[0] eq 'comment' ) {
             push @options, uc($_->[0]) . ":" . $_->[1];
-        }
-        else {
+
+        } elsif( $_->[0] =~ /^(line)|(area)$/ ) {
+            push @options, uc($_->[0]) . 
+                           ($_->[1]->{width} || "") .
+                           ":" .
+                           $_->[1]->{value} .
+                           ($_->[1]->{color} || "") .
+                           ($_->[1]->{legend} ? ":$_->[1]->{legend}" : "") .
+                           ($_->[1]->{stack} ? ":STACK" : "");
+            
+        } elsif( $_->[0] eq "tick" ) {
+            push @options, uc($_->[0]) . 
+                       $_->[1]->{vname} .
+                       ($_->[1]->{color} || '#ff0000') .
+                       ($_->[1]->{fraction} ? ":$_->[1]->{legend}" : ":.1") .
+                       ($_->[1]->{legend} ? ":$_->[1]->{legend}" : "");
+            
+        } elsif( $_->[0] eq "shift" ) {
+            push @options, uc($_->[0]) . ":$_->[1]->{vname}" .
+                                         ":$_->[1]->{offset}";
+            
+        } else {
             $_->[1]->{draw}   ||= $draws[0]->{name};
             $_->[1]->{cfunc}  ||= "AVERAGE";
             $_->[1]->{format} ||= "Average=%lf";
@@ -633,6 +675,24 @@ sub graph {
     unshift @options, $image;
 
     $self->RRDs_execute("graph", @options);
+}
+
+#################################################
+sub option_expand {
+#################################################
+    my($oname, $ovalue) = @_;
+
+    # If $ovalue is an array ref, return ($oname, $element)
+    # for each of the elements in @$ovalue.
+    my @result;
+
+    if ( ref($ovalue) eq 'ARRAY' ) {
+        push @result, [$oname, $_] foreach @$ovalue;
+    } else {
+        push @result, [$oname, $ovalue];
+    }
+
+    return @result;
 }
 
 #################################################
@@ -1361,6 +1421,27 @@ an optional legend string specified:
                  legend => "When we crossed midnight"
                },
 
+Horizontal rules can be added by the C<line> by using a C<line> block
+like in
+
+    line => { 
+        value   => "value or def/cdef/vdef",
+        color   => "#0000ff",
+        legend  => "a blue horizontal line",
+        width   => 120,
+        stack   => 1,
+    }
+        
+If instead of a horizontal line, a rectangular area is supposed to
+be added to the graph, use an C<area> block:
+
+    area => { 
+        value   => "value or def/cdef/vdef",
+        color   => "#0000ff",
+        legend  => "a blue horizontal line",
+        stack   => 1,
+    }
+
 =item I<$rrd-E<gt>dump()>
 
 I<Available as of rrdtool 1.0.49>.
@@ -1537,7 +1618,7 @@ Mike Schilli, E<lt>m@perlmeister.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2004 by Mike Schilli
+Copyright (C) 2004, 2005 by Mike Schilli
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.3 or,

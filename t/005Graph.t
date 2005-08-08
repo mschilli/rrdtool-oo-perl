@@ -1,5 +1,5 @@
 
-use Test::More qw(no_plan);
+use Test::More tests => 14;
 use RRDTool::OO;
 use Log::Log4perl qw(:easy);
 
@@ -332,7 +332,6 @@ view("mygraph.png");
 ok(-f "mygraph.png", "Image exists");
 unlink "mygraph.png";
 
-VRULE:
 ######################################################################
 # Test comment, vrule
 ######################################################################
@@ -367,6 +366,43 @@ VRULE:
 #                size    => 32,
 #                element => "title",
 #              },
+    );
+
+view("mygraph.png");
+ok(-f "mygraph.png", "Image exists");
+unlink "mygraph.png";
+
+LINE:
+######################################################################
+# Test comment, hrule
+######################################################################
+    $rrd->graph(
+      image          => "mygraph.png",
+      vertical_label => 'My Salary',
+      start          => $start_time,
+      end            => $start_time + $nof_iterations * 60,
+      draw           => {
+        type      => 'line',
+        color     => 'FF0000', # red line
+        name      => 'firstgraph',
+        legend    => 'Unmodified Load',
+      },
+      line        => {
+                value  => 3,
+                legend => "line1",
+                color  => "#00ff00",
+                stack  => 1,
+      },
+      line        => {
+                value  => 10,
+                legend => "line2",
+                color  => "#ff0000",
+      },
+      area        => {
+                value  => 5,
+                legend => "area1",
+                color  => "#0000ff",
+      },
     );
 
 view("mygraph.png");

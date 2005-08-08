@@ -4,6 +4,13 @@ use File::Basename;
 
 # Check if RRDs is installed
 eval { require RRDs; };
+
+    # (1) libcgi is missing on most Linux/FreeBSD systems, and we
+    #     don't need it anyway.
+    # (2) as of rrdtool-1.2.11, tcl libs didn't compile, so let's
+    #     leave them out.
+my $CONFIGURE_OPTS = "--prefix=/usr --disabled-tcl --enable-rddcgi=no";
+
 my $DIST_URL = 
 "http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/pub/rrdtool.tar.gz";
 
@@ -55,7 +62,7 @@ sub install_RRDs {
         die "Cannot download $DIST_URL ($!)";
     print STDERR "done.\n";
 
-    system("gzip -dc rrdtool.tar.gz | tar xfv -; cd `ls -t | head -1`; configure; make; cd perl-shared; perl Makefile.PL; make; make test; make install") and die "Install failed: $!";
+    system("gzip -dc rrdtool.tar.gz | tar xfv -; cd `ls -t | head -1`; configure$CONFIGURE_OPTS; make; cd perl-shared; perl Makefile.PL; make; make test; make install") and die "Install failed: $!";
 
 }
 
@@ -65,5 +72,9 @@ sub note {
     print "################################################\n";
     print "# Please check the INSTALLATION section in the #\n";
     print "# RRDTool::OO manual page.                     #\n";
+    print "# You can download the rrdtool library at      #\n";
+    print "# $DIST_URL\n";
+    print "# and compile it using                         #\n";
+    print "#   $CONFIGURE_OPTIONS\n";
     print "################################################\n";
 }
