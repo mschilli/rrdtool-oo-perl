@@ -395,29 +395,43 @@ DESCRIPTION
 
         Sometimes it's useful to print max, min or average values of a given
         graph at the bottom of the chart or to STDOUT. That's what "gprint"
-        and "print" options are for. In addition to the "draw" name
-        (defaults to the first draw), a consolidation function can be
-        specified: MIN, MAX, AVERAGE, LAST (defaults to AVERAGE). Note that
-        this is unrelated to the data source's consolidation function, it's
-        just applied on the graph print/gprint refer to. Finally, the
-        "format" parameter gives a printf-like template (defaults to
-        "Average=%lf": A call to
+        and "print" options are for. They are printing variables which are
+        defined as "vdef"s somewhere else:
 
             $rrd->graph(
               image          => $image_file_name,
+                  # Real graph
               draw           => {
                 name      => "first_draw",
                 dsname    => "load",
-                cfunc     => 'MAX'},
+                cfunc     => 'MAX'
+              },
+
+        TODO
+
+              vdef           => {
+                name      => "average_of_first_draw"
+                calc      => "first_draw,AVERAGE",
+              },
+
+                  # vdef for calculating average of real graph
+              draw           => {
+                type      => "hidden",
+                name      => "average_of_first_draw",
+                vdef      => "first_draw,AVERAGE"
+              },
               gprint         => {
-                draw      => 'first_draw',
-                cfunc     => 'AVERAGE',
+                draw      => 'average_of_first_draw',
                 format    => 'Average=%lf',
               },
             );
 
+        The "vdef" performs a calculation, specified in RPN notation, on a
+        real graph, which it refers to. It uses a hidden graph for this.
+
+        The "gprint" option then refers to the "vdef" virtual graph and
         prints "Average=x.xx" at the bottom of the graph, showing what the
-        average value of the graph is.
+        average value of graph "first_draw" is.
 
         To write comments to the graph (like gprints, but with no associated
         RRD data source) use "comment", like this:
@@ -429,11 +443,6 @@ DESCRIPTION
                 dsname    => "load",
                 cfunc     => 'MAX'},
               comment        => "Remember, 83% of all statistics are made up",
-              gprint         => {
-                draw      => 'first_draw',
-                cfunc     => 'AVERAGE',
-                format    => 'Average=%lf',
-              },
             );
 
         Multiple comment lines can be specified in a single comment
@@ -459,11 +468,10 @@ DESCRIPTION
                          legend => "When we crossed midnight"
                        },
 
-        Horizontal rules can be added by the "line" by using a "line" block
-        like in
+        Horizontal rules can be added by using a "line" block like in
 
             line => { 
-                value   => "value or def/cdef/vdef",
+                value   => "fixed num value or draw name",
                 color   => "#0000ff",
                 legend  => "a blue horizontal line",
                 width   => 120,
@@ -474,7 +482,7 @@ DESCRIPTION
         be added to the graph, use an "area" block:
 
             area => { 
-                value   => "value or def/cdef/vdef",
+                value   => "fixed num value or draw name",
                 color   => "#0000ff",
                 legend  => "a blue horizontal line",
                 stack   => 1,
@@ -490,7 +498,7 @@ DESCRIPTION
                 stack   => 1,
             }
 
-        The graph may be shifted along the time axis:
+        The graph may be shifted relative to the time axis:
 
             shift => {
                 draw    => "drawname",
