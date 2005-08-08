@@ -480,6 +480,23 @@ DESCRIPTION
                 stack   => 1,
             }
 
+        The "graph" method can also generate tickmarks (vertical lines) for
+        every defined value, using the "tick" option:
+
+            tick => {
+                draw    => "drawname",
+                color   => "#0000ff",
+                legend  => "a blue horizontal line",
+                stack   => 1,
+            }
+
+        The graph may be shifted along the time axis:
+
+            shift => {
+                draw    => "drawname",
+                offset  => $offset,
+            }
+
     *$rrd->dump()*
         *Available as of rrdtool 1.0.49*.
 
