@@ -44,7 +44,7 @@ our $OPTIONS = {
                     draw      => {
                       mandatory => [qw()],
                       optional  => [qw(file dsname cfunc thickness 
-                                       type color legend name cdef)],
+                                       type color legend name cdef vdef)],
                     },
                     color     => {
                       mandatory => [qw()],
@@ -60,8 +60,8 @@ our $OPTIONS = {
                       optional  => [qw(draw format cfunc)],
                     },
                     gprint     => {
-                      mandatory => [qw()],
-                      optional  => [qw(draw format cfunc)],
+                      mandatory => [qw(format)],
+                      optional  => [qw(draw cfunc)],
                     },
                     vrule      => {
                       mandatory => [qw(time)],
@@ -594,6 +594,8 @@ sub graph {
             # Is it just a CDEF, a different view of a another draw?
         if($_->{cdef}) {
             push @options, "CDEF:$_->{name}=$_->{cdef}";
+        } elsif($_->{vdef}) {
+            push @options, "VDEF:$_->{name}=$_->{vdef}";
         } else {
                 # Use either directly defined, default for a given file or
                 # default for default file, in this order.
@@ -666,11 +668,10 @@ sub graph {
             
         } else {
             $_->[1]->{draw}   ||= $draws[0]->{name};
-            $_->[1]->{cfunc}  ||= "AVERAGE";
             $_->[1]->{format} ||= "Average=%lf";
             push @options, uc($_->[0]) . ":" .
                            $_->[1]->{draw} . ":" .
-                           $_->[1]->{cfunc} . ":" .
+                           ($_->[1]->{cfunc} ? "$_->[1]->{cfunc}:" : "") .
                            $_->[1]->{format};
         }
     }
@@ -1361,29 +1362,43 @@ on what each option is used for:
 
 Sometimes it's useful to print max, min or average values of
 a given graph at the bottom of the chart or to STDOUT. That's what
-C<gprint> and C<print> options are for. In addition to the C<draw>
-name (defaults to the first draw), a consolidation function can
-be specified: MIN, MAX, AVERAGE, LAST (defaults to AVERAGE). Note
-that this is unrelated to the data source's consolidation function,
-it's just applied on the graph print/gprint refer to. Finally, the
-C<format> parameter gives a printf-like template (defaults to 
-"Average=%lf": A call to
+C<gprint> and C<print> options are for. They are printing variables
+which are defined as C<vdef>s somewhere else:
 
     $rrd->graph(
       image          => $image_file_name,
+          # Real graph
       draw           => {
         name      => "first_draw",
         dsname    => "load",
-        cfunc     => 'MAX'},
+        cfunc     => 'MAX'
+      },
+
+TODO
+
+      vdef           => {
+        name      => "average_of_first_draw"
+        calc      => "first_draw,AVERAGE",
+      },
+
+          # vdef for calculating average of real graph
+      draw           => {
+        type      => "hidden",
+        name      => "average_of_first_draw",
+        vdef      => "first_draw,AVERAGE"
+      },
       gprint         => {
-        draw      => 'first_draw',
-        cfunc     => 'AVERAGE',
+        draw      => 'average_of_first_draw',
         format    => 'Average=%lf',
       },
     );
 
-prints "Average=x.xx" at the bottom of the graph, showing what the
-average value of the graph is.
+The C<vdef> performs a calculation, specified in RPN notation, on 
+a real graph, which it refers to. It uses a hidden graph for this.
+
+The C<gprint> option then refers to the C<vdef> virtual graph and prints
+"Average=x.xx" at the bottom of the graph, showing what the
+average value of graph C<first_draw> is.
 
 To write comments to the graph (like gprints, but with no associated
 RRD data source) use C<comment>, like this:
@@ -1395,11 +1410,6 @@ RRD data source) use C<comment>, like this:
         dsname    => "load",
         cfunc     => 'MAX'},
       comment        => "Remember, 83% of all statistics are made up",
-      gprint         => {
-        draw      => 'first_draw',
-        cfunc     => 'AVERAGE',
-        format    => 'Average=%lf',
-      },
     );
 
 Multiple comment lines can be specified in a single comment specification
@@ -1425,11 +1435,11 @@ an optional legend string specified:
                  legend => "When we crossed midnight"
                },
 
-Horizontal rules can be added by the C<line> by using a C<line> block
+Horizontal rules can be added by using a C<line> block
 like in
 
     line => { 
-        value   => "value or def/cdef/vdef",
+        value   => "fixed num value or draw name",
         color   => "#0000ff",
         legend  => "a blue horizontal line",
         width   => 120,
@@ -1440,7 +1450,7 @@ If instead of a horizontal line, a rectangular area is supposed to
 be added to the graph, use an C<area> block:
 
     area => { 
-        value   => "value or def/cdef/vdef",
+        value   => "fixed num value or draw name",
         color   => "#0000ff",
         legend  => "a blue horizontal line",
         stack   => 1,
@@ -1456,7 +1466,7 @@ for every defined value, using the C<tick> option:
         stack   => 1,
     }
 
-The graph may be shifted along the time axis:
+The graph may be shifted relative to the time axis:
 
     shift => {
         draw    => "drawname",
