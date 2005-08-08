@@ -379,6 +379,7 @@ LINE:
     $rrd->graph(
       image          => "mygraph.png",
       vertical_label => 'My Salary',
+      width          => 1000,
       start          => $start_time,
       end            => $start_time + $nof_iterations * 60,
       draw           => {
@@ -402,6 +403,15 @@ LINE:
                 value  => 5,
                 legend => "area1",
                 color  => "#0000ff",
+      },
+      tick        => {
+                legend => "ticks",
+                color  => "#00ff00",
+                fraction => 0.5,
+      },
+      shift       => {
+                draw  => 'firstgraph',
+                offset => 1000,
       },
     );
 

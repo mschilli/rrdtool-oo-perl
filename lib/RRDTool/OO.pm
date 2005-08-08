@@ -38,7 +38,7 @@ our $OPTIONS = {
                                      rigid
                                      logarithmic color no_legend only_graph
                                      force_rules_legend title step draw
-                                     line area
+                                     line area shift tick
                                      print gprint vrule comment font
                                     )],
                     draw      => {
@@ -80,12 +80,12 @@ our $OPTIONS = {
                       optional  => [qw(color legend stack)],
                     },
                     tick        => {
-                      mandatory => [qw(vname color)],
-                      optional  => [qw(legend fraction)],
+                      mandatory => [qw()],
+                      optional  => [qw(draw color legend fraction)],
                     },
                     shift       => {
-                      mandatory => [qw(vname offset)],
-                      optional  => [qw()],
+                      mandatory => [qw(offset)],
+                      optional  => [qw(draw)],
                     },
                   },
     fetch_start=> { mandatory => [qw()],
@@ -473,8 +473,6 @@ sub graph {
 
     my @trailing_options = ();
 
-    my $vname_default;
-
     check_options "graph", \@options;
 
     my @colors = ();
@@ -515,6 +513,12 @@ sub graph {
         } elsif($options[$i] eq "vrule") {
             check_options "graph/vrule", [%{$options[$i+1]}];
             push @vrules, [$options[$i], $options[$i+1]];
+        } elsif($options[$i] eq "tick") {
+            check_options "graph/tick", [%{$options[$i+1]}];
+            push @prints, option_expand(@options[$i, $i+1]);
+        } elsif($options[$i] eq "shift") {
+            check_options "graph/shift", [%{$options[$i+1]}];
+            push @prints, option_expand(@options[$i, $i+1]);
         } elsif($options[$i] eq "font") {
             push @fonts,$options[$i+1];
         }
@@ -522,12 +526,14 @@ sub graph {
 
     delete $options_hash{color};
     delete $options_hash{vrule};
-    delete $options_hash{print};
+    delete $options_hash{'print'};
     delete $options_hash{gprint};
     delete $options_hash{comment};
     delete $options_hash{font};
     delete $options_hash{line};
     delete $options_hash{area};
+    delete $options_hash{tick};
+    delete $options_hash{'shift'};
 
     @options = add_dashes(\%options_hash);
 
@@ -584,9 +590,6 @@ sub graph {
         unless(defined $_->{name}) {
             $_->{name} = "draw$draw_count";
         }
-
-            # Set default var name
-        $vname_default ||= $_->{name};
 
             # Is it just a CDEF, a different view of a another draw?
         if($_->{cdef}) {
@@ -650,15 +653,16 @@ sub graph {
                            ($_->[1]->{stack} ? ":STACK" : "");
             
         } elsif( $_->[0] eq "tick" ) {
-            push @options, uc($_->[0]) . 
-                       $_->[1]->{vname} .
+            push @options, uc($_->[0]) . ":" .
+                       ($_->[1]->{draw} || $draws[0]->{name}) .
                        ($_->[1]->{color} || '#ff0000') .
-                       ($_->[1]->{fraction} ? ":$_->[1]->{legend}" : ":.1") .
+                       ($_->[1]->{fraction} ? ":$_->[1]->{fraction}" : ":.1") .
                        ($_->[1]->{legend} ? ":$_->[1]->{legend}" : "");
             
         } elsif( $_->[0] eq "shift" ) {
-            push @options, uc($_->[0]) . ":$_->[1]->{vname}" .
-                                         ":$_->[1]->{offset}";
+            push @options, uc($_->[0]) . ":" .
+                           ($_->[1]->{draw} || $draws[0]->{name}) .
+                           ":$_->[1]->{offset}";
             
         } else {
             $_->[1]->{draw}   ||= $draws[0]->{name};
@@ -1440,6 +1444,23 @@ be added to the graph, use an C<area> block:
         color   => "#0000ff",
         legend  => "a blue horizontal line",
         stack   => 1,
+    }
+
+The C<graph> method can also generate tickmarks (vertical lines)
+for every defined value, using the C<tick> option:
+
+    tick => {
+        draw    => "drawname",
+        color   => "#0000ff",
+        legend  => "a blue horizontal line",
+        stack   => 1,
+    }
+
+The graph may be shifted along the time axis:
+
+    shift => {
+        draw    => "drawname",
+        offset  => $offset,
     }
 
 =item I<$rrd-E<gt>dump()>

@@ -9,7 +9,7 @@ eval { require RRDs; };
     #     don't need it anyway.
     # (2) as of rrdtool-1.2.11, tcl libs didn't compile, so let's
     #     leave them out.
-my $CONFIGURE_OPTS = "--prefix=/usr --disabled-tcl --enable-rddcgi=no";
+my $CONFIGURE_OPTS = "--prefix=/usr --disable-tcl --disable-rrdcgi";
 
 my $DIST_URL = 
 "http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/pub/rrdtool.tar.gz";
@@ -26,6 +26,9 @@ EOT
     my $in = <>;
     chomp $in;
     if($in =~ /^\s*$/ or $in =~ /y/i) {
+        if($> != 0) {
+            die "\nYou need to be root to do this.\n";
+        }
         eval { install_RRDs() };
         if($@) {
             print $@;
@@ -62,7 +65,7 @@ sub install_RRDs {
         die "Cannot download $DIST_URL ($!)";
     print STDERR "done.\n";
 
-    system("gzip -dc rrdtool.tar.gz | tar xfv -; cd `ls -t | head -1`; configure$CONFIGURE_OPTS; make; cd perl-shared; perl Makefile.PL; make; make test; make install") and die "Install failed: $!";
+    system("gzip -dc rrdtool.tar.gz | tar xfv -; cd `ls -t | head -1`; configure $CONFIGURE_OPTS; make; cd perl-shared; perl Makefile.PL; make; make test; make install") and die "Install failed: $!";
 
 }
 

@@ -2,6 +2,8 @@
 TODO: * 1.2.11 install (/usr/local/rrdtool-1..)
       * perl install
       * prefix configurable
+      * Check 1.2 version before installing
+      * check necessary perms before downloading
 
 0.13 2005/08/07
     (ms) Added line, area, tick, and shift to graph method.

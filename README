@@ -1,5 +1,5 @@
 ######################################################################
-    RRDTool::OO 0.12
+    RRDTool::OO 0.13
 ######################################################################
 
 NAME
@@ -459,6 +459,27 @@ DESCRIPTION
                          legend => "When we crossed midnight"
                        },
 
+        Horizontal rules can be added by the "line" by using a "line" block
+        like in
+
+            line => { 
+                value   => "value or def/cdef/vdef",
+                color   => "#0000ff",
+                legend  => "a blue horizontal line",
+                width   => 120,
+                stack   => 1,
+            }
+        
+        If instead of a horizontal line, a rectangular area is supposed to
+        be added to the graph, use an "area" block:
+
+            area => { 
+                value   => "value or def/cdef/vdef",
+                color   => "#0000ff",
+                legend  => "a blue horizontal line",
+                stack   => 1,
+            }
+
     *$rrd->dump()*
         *Available as of rrdtool 1.0.49*.
 
@@ -613,7 +634,7 @@ AUTHOR
     Mike Schilli, <m@perlmeister.com>
 
 COPYRIGHT AND LICENSE
-    Copyright (C) 2004 by Mike Schilli
+    Copyright (C) 2004, 2005 by Mike Schilli
 
     This library is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself, either Perl version 5.8.3 or, at
