@@ -81,7 +81,8 @@ sub note {
     print "# You can download the rrdtool library at      #\n";
     print "# $DIST_URL\n";
     print "# and compile it using                         #\n";
-    print "#   $CONFIGURE_OPTS\n";
+    print "#   configure $CONFIGURE_OPTS\n";
+    print "#   cd perl-shared; perl Makefile.PL; make install\n";
     print "################################################\n";
 }
 
