@@ -1374,19 +1374,13 @@ which are defined as C<vdef>s somewhere else:
         cfunc     => 'MAX'
       },
 
-TODO
-
-      vdef           => {
-        name      => "average_of_first_draw"
-        calc      => "first_draw,AVERAGE",
-      },
-
-          # vdef for calculating average of real graph
+        # vdef for calculating average of real graph
       draw           => {
         type      => "hidden",
         name      => "average_of_first_draw",
         vdef      => "first_draw,AVERAGE"
       },
+
       gprint         => {
         draw      => 'average_of_first_draw',
         format    => 'Average=%lf',
