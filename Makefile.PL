@@ -4,6 +4,7 @@ use File::Basename;
 
 # Check if RRDs is installed
 my $v = rrdtool_version();
+#print "v=$v\n";
 
 eval { require RRDs; };
 
@@ -16,7 +17,7 @@ my $CONFIGURE_OPTS = "--prefix=/usr --disable-tcl --disable-rrdcgi";
 my $DIST_URL = 
 "http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/pub/rrdtool.tar.gz";
 
-if($@ or !$v or $v < 1.2) {
+if($@ or !$v or $v < 1.002011) {
     print <<EOT;
 This module requires rrdtool 1.2.x and the RRDs module to be 
 installed. They are available in the rrdtool distribution:
@@ -106,8 +107,8 @@ sub rrdtool_version {
     my $data = join '', <PIPE>;
     close PIPE;
 
-    if($data =~ /RRDtool (\d+\.\d+)/) {
-        return $1;
+    if($data =~ /RRDtool (\d+)\.(\d+)\.(\d+)/) {
+        return $1 + $2/1000.0 + $3/1000000.0;
     }
 
     return undef;
