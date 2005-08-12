@@ -82,6 +82,7 @@ sub note {
     print "# $DIST_URL\n";
     print "# and compile it using                         #\n";
     print "#   configure $CONFIGURE_OPTS\n";
+    print "#   make\n";
     print "#   cd perl-shared; perl Makefile.PL; make install\n";
     print "################################################\n";
 }
