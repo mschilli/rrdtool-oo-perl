@@ -928,7 +928,7 @@ RRDTool::OO - Object-oriented interface to RRDTool
 
         # Constructor     
     my $rrd = RRDTool::OO->new(
-                 file => "myrrdfile.rdd" );
+                 file => "myrrdfile.rrd" );
 
         # Create a round-robin database
     $rrd->create(
@@ -1550,7 +1550,7 @@ This behaviour can be overridden by calling the constructor with
 the C<raise_error> flag set to false:
 
     my $rrd = RRDTool::OO->new(
-        file        => "myrrdfile.rdd",
+        file        => "myrrdfile.rrd",
         raise_error => 0,
     );
 
@@ -1584,12 +1584,12 @@ This will display all C<rrdtool> commands that C<RRDTool::OO> submits
 to the shared library. Let's turn it on for the code snippet in the
 SYNOPSIS section of this manual page and watch the output:
 
-    rrdtool create myrrdfile.rdd --step 1 \
+    rrdtool create myrrdfile.rrd --step 1 \
             DS:mydatasource:GAUGE:2:U:U RRA:MAX:0.5:1:5
-    rrdtool update myrrdfile.rdd N:1
-    rrdtool update myrrdfile.rdd N:2
-    rrdtool update myrrdfile.rdd N:3
-    rrdtool fetch myrrdfile.rdd MAX
+    rrdtool update myrrdfile.rrd N:1
+    rrdtool update myrrdfile.rrd N:2
+    rrdtool update myrrdfile.rrd N:3
+    rrdtool fetch myrrdfile.rrd MAX
 
 Often handy for cut-and-paste.
 
