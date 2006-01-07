@@ -1630,10 +1630,14 @@ especially the manual page at
 
 =item *
 
-My articles on rrdtool in "Linux Magazin" (Germany) and "Linux Magazine" (UK):
+My articles on rrdtool in
+"Linux Magazine" (UK) and
+"Linux Magazin" (Germany):
 
+        (English)
+    http://www.linux-magazine.com/issue/44/Perl_RDDtool.pdf
+        (German)
     http://www.linux-magazin.de/Artikel/ausgabe/2004/06/perl/perl.html
-    http://www.linux-magazine.com/issue/44/Limiting_Data.pdf (not online yet)
 
 =back
 
