@@ -1,4 +1,10 @@
 
+0.14 (04/28/2006)
+    (ms) Order of prints, legends, gprints etc. now preserved, see
+         http://lists.ee.ethz.ch/rrd-users/msg11161.html
+
+0.14 2006/04/28
+
 0.13 (08/07/2005)
     (ms) Added line, area, tick, and shift to graph method.
     (ms) Added vdef to graph.

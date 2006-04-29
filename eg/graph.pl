@@ -78,11 +78,11 @@ $rrd->graph(
         legend    => 'second legend',
     },
 
-    gprint        => {
-        draw      => 'some_stupid_draw',
-        format    => 'avg=%lf',
-        #cfunc     => 'MIN',
-    },
+#    gprint        => {
+#        draw      => 'some_stupid_draw',
+#        format    => 'avg=%lf',
+#        #cfunc     => 'MIN',
+#    },
 );
 
 print "$IMG ready.\n";

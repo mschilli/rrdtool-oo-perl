@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -480,7 +480,10 @@ sub graph {
     my @vrules = ();
     my @fonts  = ();
 
+    my @items = ();
+    my $nof_draws = 0;
     my @draws = ();
+
     my %options_hash = @options;
     my $draw_count   = 1;
 
@@ -489,7 +492,9 @@ sub graph {
 
     for(my $i=0; $i < @options; $i += 2) {
         if($options[$i] eq "draw") {
+            push @items, ['draw', $options[$i+1]];
             push @draws, $options[$i+1];
+            $nof_draws++;
         } elsif($options[$i] eq "color") {
             check_options "graph/color", [%{$options[$i+1]}];
             for(keys %{$options[$i+1]}) {
@@ -498,27 +503,27 @@ sub graph {
             }
         } elsif($options[$i] eq "print") {
             check_options "graph/print", [%{$options[$i+1]}];
-            push @prints, [$options[$i], $options[$i+1]];
+            push @items, ['print', [$options[$i], $options[$i+1]]];
         } elsif($options[$i] eq "gprint") {
             check_options "graph/gprint", [%{$options[$i+1]}];
-            push @prints, [$options[$i], $options[$i+1]];
+            push @items, ['print', [$options[$i], $options[$i+1]]];
         } elsif($options[$i] eq "comment") {
-            push @prints, option_expand(@options[$i, $i+1]);
+            push @items, ['print', option_expand(@options[$i, $i+1])];
         } elsif($options[$i] eq "line") {
             check_options "graph/line", [%{$options[$i+1]}];
-            push @prints, option_expand(@options[$i, $i+1]);
+            push @items, ['print', option_expand(@options[$i, $i+1])];
         } elsif($options[$i] eq "area") {
             check_options "graph/area", [%{$options[$i+1]}];
-            push @prints, option_expand(@options[$i, $i+1]);
+            push @items, ['print', option_expand(@options[$i, $i+1])];
         } elsif($options[$i] eq "vrule") {
             check_options "graph/vrule", [%{$options[$i+1]}];
-            push @vrules, [$options[$i], $options[$i+1]];
+            push @items, ['vrule', [$options[$i], $options[$i+1]]];
         } elsif($options[$i] eq "tick") {
             check_options "graph/tick", [%{$options[$i+1]}];
-            push @prints, option_expand(@options[$i, $i+1]);
+            push @items, ['print', option_expand(@options[$i, $i+1])];
         } elsif($options[$i] eq "shift") {
             check_options "graph/shift", [%{$options[$i+1]}];
-            push @prints, option_expand(@options[$i, $i+1]);
+            push @items, ['print', option_expand(@options[$i, $i+1])];
         } elsif($options[$i] eq "font") {
             push @fonts,$options[$i+1];
         }
@@ -554,7 +559,7 @@ sub graph {
     }
 
         # Push a pseudo draw if there's none.
-    @draws = ({}) unless @draws;
+    unshift @items, ['draw', {}] unless $nof_draws;
 
     for(@fonts) {
 
@@ -569,113 +574,18 @@ sub graph {
                                 $_->{size} . ":" . $_->{name};
     }
 
-    for(@draws) {
-
-        check_options "graph/draw", [%$_];
-
-        $_->{thickness} ||= 1;        # LINE1 is default
-        $_->{color}     ||= 'FF0000'; # red is default
-        $_->{legend}    ||= '';       # no legend by default
-
-        $_->{file}   = first_def $_->{file}, $self->{file};
-
-        my($dsname, $cfunc);
-
-        if($_->{file} ne $self->{file}) {
-            my $rrd = __PACKAGE__->new(file => $_->{file});
-            $dsname = $rrd->default('dsname');
-            $cfunc  = $rrd->default('cfunc');
-        }
-
-        unless(defined $_->{name}) {
-            $_->{name} = "draw$draw_count";
-        }
-
-            # Is it just a CDEF, a different view of a another draw?
-        if($_->{cdef}) {
-            push @options, "CDEF:$_->{name}=$_->{cdef}";
-        } elsif($_->{vdef}) {
-            push @options, "VDEF:$_->{name}=$_->{vdef}";
-        } else {
-                # Use either directly defined, default for a given file or
-                # default for default file, in this order.
-            $_->{dsname} = first_def $_->{dsname}, $dsname, 
-                                     $options_hash{dsname};
-            $_->{cfunc}  = first_def $_->{cfunc}, $cfunc, $options_hash{cfunc};
-
-            # Create the draw strings
-            #DEF:myload=$DB:load:MAX
-            push @options, "DEF:$_->{name}=$_->{file}:" .
-                           "$_->{dsname}:" .
-                           "$_->{cfunc}";
-        }
-
-            #LINE2:myload#FF0000
-        $_->{type} ||= 'line';
-
-        my $draw_attributes = ":$_->{name}#$_->{color}";
-        $draw_attributes .= ":$_->{legend}" if length $_->{legend};
-
-        if($_->{type} eq "hidden") {
-            # Invisible graph
-        } elsif($_->{type} eq "line") {
-            push @options, "LINE$_->{thickness}$draw_attributes";
-        } elsif($_->{type} eq "area") {
-            push @options, "AREA$draw_attributes";
-        } elsif($_->{type} eq "stack") {
-            push @options, "STACK$draw_attributes";
-        } else {
-            die "Invalid graph type: $_->{type}";
-        }
-        
-        $draw_count++;
-    }
-
-    # Push vrules
-    for(@vrules) {
-        $_->[1]->{color} ||= "#000000";
-        push @options, uc($_->[0]) . ":" .
-                       $_->[1]->{time} .
-                       $_->[1]->{color} .
-                       ( $_->[1]->{legend} ?  ":" . $_->[1]->{legend} : "");
-    }
-    
-        # Push all prints, gprints and comments
-    for(@prints) {
-        if ( $_->[0] eq 'comment' ) {
-            push @options, uc($_->[0]) . ":" . $_->[1];
-
-        } elsif( $_->[0] =~ /^(line)|(area)$/ ) {
-            push @options, uc($_->[0]) . 
-                           ($_->[1]->{width} || "") .
-                           ":" .
-                           $_->[1]->{value} .
-                           ($_->[1]->{color} || "") .
-                           ($_->[1]->{legend} ? ":$_->[1]->{legend}" : "") .
-                           ($_->[1]->{stack} ? ":STACK" : "");
-            
-        } elsif( $_->[0] eq "tick" ) {
-            push @options, uc($_->[0]) . ":" .
-                       ($_->[1]->{draw} || $draws[0]->{name}) .
-                       ($_->[1]->{color} || '#ff0000') .
-                       ($_->[1]->{fraction} ? ":$_->[1]->{fraction}" : ":.1") .
-                       ($_->[1]->{legend} ? ":$_->[1]->{legend}" : "");
-            
-        } elsif( $_->[0] eq "shift" ) {
-            push @options, uc($_->[0]) . ":" .
-                           ($_->[1]->{draw} || $draws[0]->{name}) .
-                           ":$_->[1]->{offset}";
-            
-        } else {
-            $_->[1]->{draw}   ||= $draws[0]->{name};
-            $_->[1]->{format} ||= "Average=%lf";
-            push @options, uc($_->[0]) . ":" .
-                           $_->[1]->{draw} . ":" .
-                           ($_->[1]->{cfunc} ? "$_->[1]->{cfunc}:" : "") .
-                           $_->[1]->{format};
+    for(@items) {
+        if($_->[0] eq 'draw') {
+            $self->process_draw($_->[1], \@options, 
+                                \%options_hash, $draw_count);
+            $draw_count++;
+        } elsif($_->[0] eq 'vrule') {
+            $self->process_vrule($_->[1], \@options);
+        } elsif($_->[0] eq 'print') {
+            $self->process_print($_->[1], \@options, \@draws);
         }
     }
-    
+
     push @options, @colors;
     unshift @options, $image;
 
@@ -912,6 +822,123 @@ sub last {
     my($self) = @_;
 
     $self->RRDs_execute("last", $self->{file});
+}
+
+###########################################
+sub process_draw {
+###########################################
+    my($self, $p, $options, $options_hash, $draw_count) = @_;
+
+    check_options "graph/draw", [%$p];
+
+        $p->{thickness} ||= 1;        # LINE1 is default
+        $p->{color}     ||= 'FF0000'; # red is default
+        $p->{legend}    ||= '';       # no legend by default
+
+        $p->{file}   = first_def $p->{file}, $self->{file};
+
+        my($dsname, $cfunc);
+
+        if($p->{file} ne $self->{file}) {
+            my $rrd = __PACKAGE__->new(file => $p->{file});
+            $dsname = $rrd->default('dsname');
+            $cfunc  = $rrd->default('cfunc');
+        }
+
+        unless(defined $p->{name}) {
+            $p->{name} = "draw$draw_count";
+        }
+
+            # Is it just a CDEF, a different view of a another draw?
+        if($p->{cdef}) {
+            push @$options, "CDEF:$p->{name}=$p->{cdef}";
+        } elsif($p->{vdef}) {
+            push @$options, "VDEF:$p->{name}=$p->{vdef}";
+        } else {
+                # Use either directly defined, default for a given file or
+                # default for default file, in this order.
+            $p->{dsname} = first_def $p->{dsname}, $dsname, 
+                                     $options_hash->{dsname};
+            $p->{cfunc}  = first_def $p->{cfunc}, $cfunc, 
+                                     $options_hash->{cfunc};
+
+            # Create the draw strings
+            #DEF:myload=$DB:load:MAX
+            push @$options, "DEF:$p->{name}=$p->{file}:" .
+                           "$p->{dsname}:" .
+                           "$p->{cfunc}";
+        }
+
+            #LINE2:myload#FF0000
+        $p->{type} ||= 'line';
+
+        my $draw_attributes = ":$p->{name}#$p->{color}";
+        $draw_attributes .= ":$p->{legend}" if length $p->{legend};
+
+        if($p->{type} eq "hidden") {
+            # Invisible graph
+        } elsif($p->{type} eq "line") {
+            push @$options, "LINE$p->{thickness}$draw_attributes";
+        } elsif($p->{type} eq "area") {
+            push @$options, "AREA$draw_attributes";
+        } elsif($p->{type} eq "stack") {
+            push @$options, "STACK$draw_attributes";
+        } else {
+            die "Invalid graph type: $p->{type}";
+        }
+}
+
+###########################################
+sub process_vrule {
+###########################################
+    my($self, $vrule, $options) = @_;
+
+    # Push vrules
+    $vrule->[1]->{color} ||= "#000000";
+    push @$options, uc($vrule->[0]) . ":" .
+                    $vrule->[1]->{time} .
+                    $vrule->[1]->{color} .
+                    ( $vrule->[1]->{legend} ?  
+                         ":" . $vrule->[1]->{legend} : "");
+}
+
+###########################################
+sub process_print {
+###########################################
+    my($self, $p, $options, $draws) = @_;
+
+    if ( $p->[0] eq 'comment' ) {
+        push @$options, uc($p->[0]) . ":" . $p->[1];
+
+    } elsif( $p->[0] =~ /^(line)|(area)$/ ) {
+        push @$options, uc($p->[0]) . 
+                       ($p->[1]->{width} || "") .
+                       ":" .
+                       $p->[1]->{value} .
+                       ($p->[1]->{color} || "") .
+                       ($p->[1]->{legend} ? ":$p->[1]->{legend}" : "") .
+                       ($p->[1]->{stack} ? ":STACK" : "");
+        
+    } elsif( $p->[0] eq "tick" ) {
+        push @$options, uc($p->[0]) . ":" .
+                   ($p->[1]->{draw} || $draws->[0]->{name}) .
+                   ($p->[1]->{color} || '#ff0000') .
+                   ($p->[1]->{fraction} ? ":$p->[1]->{fraction}" : ":.1") .
+                   ($p->[1]->{legend} ? ":$p->[1]->{legend}" : "");
+        
+    } elsif( $p->[0] eq "shift" ) {
+        push @$options, uc($p->[0]) . ":" .
+                       ($p->[1]->{draw} || $draws->[0]->{name}) .
+                       ":$p->[1]->{offset}";
+        
+    } else {
+        $p->[1]->{draw}   ||= $draws->[0]->{name};
+        $p->[1]->{format} ||= "Average=%lf";
+        push @$options, uc($p->[0]) . ":" .
+                       $p->[1]->{draw} . ":" .
+                       ($p->[1]->{cfunc} ? "$p->[1]->{cfunc}:" : "") .
+                       $p->[1]->{format};
+    }
 }
 
 1;

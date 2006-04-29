@@ -1,5 +1,5 @@
 ######################################################################
-    RRDTool::OO 0.13
+    RRDTool::OO 0.14
 ######################################################################
 
 NAME
@@ -10,7 +10,7 @@ SYNOPSIS
 
             # Constructor     
         my $rrd = RRDTool::OO->new(
-                     file => "myrrdfile.rdd" );
+                     file => "myrrdfile.rrd" );
 
             # Create a round-robin database
         $rrd->create(
@@ -573,7 +573,7 @@ DESCRIPTION
     "raise_error" flag set to false:
 
         my $rrd = RRDTool::OO->new(
-            file        => "myrrdfile.rdd",
+            file        => "myrrdfile.rrd",
             raise_error => 0,
         );
 
@@ -605,12 +605,12 @@ DESCRIPTION
     the shared library. Let's turn it on for the code snippet in the
     SYNOPSIS section of this manual page and watch the output:
 
-        rrdtool create myrrdfile.rdd --step 1 \
+        rrdtool create myrrdfile.rrd --step 1 \
                 DS:mydatasource:GAUGE:2:U:U RRA:MAX:0.5:1:5
-        rrdtool update myrrdfile.rdd N:1
-        rrdtool update myrrdfile.rdd N:2
-        rrdtool update myrrdfile.rdd N:3
-        rrdtool fetch myrrdfile.rdd MAX
+        rrdtool update myrrdfile.rrd N:1
+        rrdtool update myrrdfile.rrd N:2
+        rrdtool update myrrdfile.rrd N:3
+        rrdtool fetch myrrdfile.rrd MAX
 
     Often handy for cut-and-paste.
 
@@ -643,11 +643,13 @@ SEE ALSO
 
                 http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/manual/index.html
 
-    *   My articles on rrdtool in "Linux Magazin" (Germany) and "Linux
-        Magazine" (UK):
+    *   My articles on rrdtool in "Linux Magazine" (UK) and "Linux Magazin"
+        (Germany):
 
+                (English)
+            http://www.linux-magazine.com/issue/44/Perl_RDDtool.pdf
+                (German)
             http://www.linux-magazin.de/Artikel/ausgabe/2004/06/perl/perl.html
-            http://www.linux-magazine.com/issue/44/Limiting_Data.pdf (not online yet)
 
 AUTHOR
     Mike Schilli, <m@perlmeister.com>

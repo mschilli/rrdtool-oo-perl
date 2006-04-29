@@ -225,7 +225,7 @@ unlink "mygraph.png";
 ######################################################################
     $rrd->graph(
       image          => "mygraph.png",
-      vertical_label => 'My Salary',
+      vertical_label => 'draws and gprints',
       start          => $start_time,
       end            => $start_time + $nof_iterations * 60,
       draw           => { 
@@ -233,18 +233,38 @@ unlink "mygraph.png";
           thickness => 3,
           color     => "00FF00",
           name      => "first",
+          legend    => 'firstg',
+      },
+      gprint         => {
+        draw      => 'first',
+        cfunc     => 'AVERAGE',
+        format    => 'Average1=%lf',
       },
       draw          => { 
           type      => "line",
           thickness => 3,
           color     => "0000FF",
           cdef      => "first,2,*",
+          name      => "second",
+          legend    => 'secondg',
+      },
+      gprint         => {
+        draw      => 'second',
+        cfunc     => 'AVERAGE',
+        format    => 'Average2=%lf',
       },
       draw          => { 
           type      => "line",
           thickness => 3,
           color     => "0000FF",
           cdef      => "first,3,*",
+          name      => "third",
+          legend    => 'thirdg',
+      },
+      gprint         => {
+        draw      => 'third',
+        cfunc     => 'AVERAGE',
+        format    => 'Average3=%lf',
       },
       draw          => { 
           type      => "line",
@@ -315,7 +335,7 @@ unlink "mygraph.png";
 ######################################################################
     $rrd->graph(
       image          => "mygraph.png",
-      vertical_label => 'My Salary',
+      vertical_label => 'Test gprint',
       start          => $start_time,
       end            => $start_time + $nof_iterations * 60,
       draw           => {
@@ -344,7 +364,7 @@ unlink "mygraph.png";
 ######################################################################
     $rrd->graph(
       image          => "mygraph.png",
-      vertical_label => 'My Salary',
+      vertical_label => 'Test comment, vrule',
       start          => $start_time,
       end            => $start_time + $nof_iterations * 60,
       draw           => {
@@ -384,7 +404,7 @@ unlink "mygraph.png";
 ######################################################################
     $rrd->graph(
       image          => "mygraph.png",
-      vertical_label => 'My Salary',
+      vertical_label => 'Test line, area',
       width          => 1000,
       start          => $start_time,
       end            => $start_time + $nof_iterations * 60,
@@ -431,7 +451,7 @@ VDEF:
 ######################################################################
     $rrd->graph(
       image          => "mygraph.png",
-      vertical_label => 'My Salary',
+      vertical_label => 'Test vdef, gprint',
       width          => 1000,
       start          => $start_time,
       end            => $start_time + $nof_iterations * 60,
