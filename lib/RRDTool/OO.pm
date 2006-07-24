@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -574,15 +574,17 @@ sub graph {
                                 $_->{size} . ":" . $_->{name};
     }
 
-    for(@items) {
-        if($_->[0] eq 'draw') {
-            $self->process_draw($_->[1], \@options, 
+    for my $item (@items) {
+        if($item->[0] eq 'draw') {
+            $self->process_draw($item->[1], \@options, 
                                 \%options_hash, $draw_count);
             $draw_count++;
-        } elsif($_->[0] eq 'vrule') {
-            $self->process_vrule($_->[1], \@options);
-        } elsif($_->[0] eq 'print') {
-            $self->process_print($_->[1], \@options, \@draws);
+        } elsif($item->[0] eq 'vrule') {
+            $self->process_vrule($item->[1], \@options);
+        } elsif($item->[0] eq 'print') {
+            for(@$item[1..$#$item]) {
+                $self->process_print($_, \@options, \@draws);
+            }
         }
     }
 

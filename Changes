@@ -1,9 +1,12 @@
 
+0.15 (07/23/2006)
+    (ms) Fixed bug with multiple comment lines, of which only the first
+         one was printed in the graph. It was introduced in 0.14. 
+         Thanks to Steve van der Burg for reporting and a patch.
+
 0.14 (04/28/2006)
     (ms) Order of prints, legends, gprints etc. now preserved, see
          http://lists.ee.ethz.ch/rrd-users/msg11161.html
-
-0.14 2006/04/28
 
 0.13 (08/07/2005)
     (ms) Added line, area, tick, and shift to graph method.
