@@ -31,7 +31,7 @@ our $OPTIONS = {
     graph      => { mandatory => [qw(image)],
                     optional  => [qw(vertical_label title start end x_grid
                                      y_grid alt_y_grid no_minor alt_y_mrtg
-                                     alt_autoscale alt_autoscale_max 
+                                     alt_autoscale alt_autoscale_max base
                                      units_exponent units_length width
                                      height interlaced imginfo imgformat
                                      overlay unit lazy upper_limit lower_limit
@@ -1327,6 +1327,7 @@ C<no_minor>,
 C<alt_y_mrtg>, 
 C<alt_autoscale>, 
 C<alt_autoscale_max>, 
+C<base>, 
 C<units_exponent>, 
 C<units_length>, 
 C<width>, 
