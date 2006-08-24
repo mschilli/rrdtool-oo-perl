@@ -350,10 +350,10 @@ DESCRIPTION
 
         "vertical_label", "title", "start", "end", "x_grid", "y_grid",
         "alt_y_grid", "no_minor", "alt_y_mrtg", "alt_autoscale",
-        "alt_autoscale_max", "units_exponent", "units_length", "width",
-        "height", "interlaced", "imginfo", "imgformat", "overlay", "unit",
-        "lazy", "rigid", "upper_limit", "logarithmic", "color", "no_legend",
-        "only_graph", "force_rules_legend", "title", "step".
+        "alt_autoscale_max", "base", "units_exponent", "units_length",
+        "width", "height", "interlaced", "imginfo", "imgformat", "overlay",
+        "unit", "lazy", "rigid", "upper_limit", "logarithmic", "color",
+        "no_legend", "only_graph", "force_rules_legend", "title", "step".
 
         Some options (e.g. "alt_y_grid") don't expect values, they need to
         be specified like

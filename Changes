@@ -1,4 +1,8 @@
 
+0.16 (08/23/2006)
+    (ms) Added 'base' option to graph method, as suggested by 
+         Anton Shevchenko.
+
 0.15 (07/23/2006)
     (ms) Fixed bug with multiple comment lines, of which only the first
          one was printed in the graph. It was introduced in 0.14. 
