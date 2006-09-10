@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.16';
+our $VERSION = '0.17';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
