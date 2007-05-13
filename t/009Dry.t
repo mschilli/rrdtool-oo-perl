@@ -17,6 +17,7 @@ my $rrd = RRDTool::OO->new(
 );
 
 my $start_time     = 1080460200;
+my $nof_iterations = 10;
 
    # Define the RRD
 my $rc = $rrd->create(

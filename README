@@ -1,5 +1,5 @@
 ######################################################################
-    RRDTool::OO 0.18
+    RRDTool::OO 0.19
 ######################################################################
 
 NAME
@@ -613,6 +613,42 @@ DESCRIPTION
         rrdtool fetch myrrdfile.rrd MAX
 
     Often handy for cut-and-paste.
+
+  Allow New rrdtool Parameters
+    "RRDTool::OO" tracks rrdtool's progress loosely, so it might happen that
+    at a given point in time, rrdtool introduces a new option that
+    "RRDTool::OO" doesn't know about yet.
+
+    This might lead to problems, since default, "RRDTool::OO" has its
+    "strict" mode enabled, rejecting all unknown options. This mode is
+    usually helpful, because it catches typos (like "verical_label"), but if
+    you want to use a new rrdtool option, it's in the way.
+
+    To work around this problem until a new version of "RRDTool::OO"
+    supports the new parameter, you can use
+
+        $rrd->option_add("graph", "frobnication_level");
+
+    to add it to the optional parameter list of the "graph" (or whatever)
+    rrd function. Note that some functions in "RRDTool::OO" have
+    sub-methods, which you can specify with the dash notation. The "graph"
+    method with its various "graph/draw", "graph/color", "graph/font" are
+    notable examples.
+
+    And, as a band-aid, you can disable strict mode in these situation by
+    setting the "strict" parameter to 0 in "RRDTool::OO"'s constructor call:
+
+        my $rrd = RRDTool::OO->new(
+            strict => 0,
+            file   => "myrrdfile.rrd",
+        ); 
+
+    Note that "RRDTool::OO" follows the convention that parameters names do
+    not contain dashes, but underscores instead. So, you need to say
+    "vertical_label", not "vertical-label". The underlying rrdtool layer,
+    however, expects dashes, not underscores, which is why "RRDTool::OO"
+    converts them automatically, e.g. transforming "vertical_label" to
+    "--vertical-label" before the underlying rrdtool call happens.
 
   Dry Run Mode
     If you want to use "RRDTool::OO" to create RRD commands without
