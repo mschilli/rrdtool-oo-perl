@@ -7,12 +7,12 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.17';
+our $VERSION = '0.18';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
     new        => { mandatory => ['file'],
-                    optional  => [qw(raise_error)],
+                    optional  => [qw(raise_error dry_run)],
                   },
     create     => { mandatory => [qw(data_source archive)],
                     optional  => [qw(step start)],
@@ -186,12 +186,16 @@ sub new {
 
     my $self = {
         raise_error       => 1,
+        dry_run            => 0,
         meta              => 
             { discovered   => 0,
               cfuncs       => [],
               cfuncs_hash  => {},
               dsnames      => [],
               dsnames_hash => {},
+              exec_subref  => undef,
+              exec_args    => [],
+              exec_func    => [],
             },
         %options,
     };
@@ -290,6 +294,13 @@ sub RRDs_execute {
     my $logger = get_logger("rrdtool");
     $logger->info("rrdtool '$command' ", join " ", map { "'$_'" } @args);
 
+    if ($self->{dry_run}) {
+        $self->{meta}->{exec_subref} = $RRDs_functions{$command} ;
+        $self->{meta}->{exec_args}   = \@args ;
+        $self->{meta}->{exec_func}   = $command;
+        return ;
+    }
+	
     my @rc;
     my $error;
 
@@ -314,6 +325,18 @@ sub RRDs_execute {
     } else {
         return $rc[0];
     }
+}
+
+#################################################
+sub get_exec_env {
+#################################################
+    my($self) = @_;
+
+    # returns stored environment in previous dry-run exec
+    return ($self->{meta}->{exec_subref},
+            $self->{meta}->{exec_args},
+            $self->{meta}->{exec_func},
+           );
 }
 
 #################################################
@@ -1623,6 +1646,48 @@ SYNOPSIS section of this manual page and watch the output:
 
 Often handy for cut-and-paste.
 
+=head2 Dry Run Mode
+
+If you want to use C<RRDTool::OO> to create RRD commands without
+executing them directly, thanks to Jacquelin Charbonnel, there's the
+I<dry run> mode. Here's how it works:
+
+    my $rrd = RRDTool::OO->new(
+        file => "myrrdfile.rrd",
+        dry_run => 1
+    );
+
+With I<dry_run> set to a true value, you can run commands like
+
+    $rrd->create(
+          step        => 60,
+          data_source => { name      => "mydatasource",
+                           type      => "GAUGE" },
+          archive     => { rows      => 5 });
+
+but since I<dry_mode> is on, they won't be handed through to the
+rrdtool layer anymore. Instead, RRDTool::OO allows you to retrieve
+a reference to the RRDs function it was about to call including its
+arguments:
+
+    my ($subref, $args) = $rrd->get_exec_env();
+
+You can now examine or modify the subroutine reference C<$subref> or
+the arguments in the array reference C<$args>. Later, simply call
+
+    $subref->(@$args);
+
+to execute the RRDs function with the modified argument list later.
+In this case, @$args would contain the following items:
+
+    ("myrrdfile.rrd", "--step", "60", 
+     "DS:mydatasource:GAUGE:120:U:U", "RRA:MAX:0.5:1:5")
+
+If you're interested in the RRD function name to be executed, retrieve
+the third parameter of C<get_exec_env>:
+
+    my ($subref, $args, $funcname) = $rrd->get_exec_env();
+
 =head1 INSTALLATION
 
 C<RRDTool::OO> requires a I<rrdtool> installation with the
@@ -1677,7 +1742,7 @@ Mike Schilli, E<lt>m@perlmeister.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2004, 2005 by Mike Schilli
+Copyright (C) 2004-2007 by Mike Schilli
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.3 or,

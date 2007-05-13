@@ -1,4 +1,7 @@
 
+0.18 (05/12/2007)
+    (ms) Added 'dry mode' patch by Jacquelin Charbonnel.
+
 0.17 (09/10/2006)
     (ms) Changed build command in Makefile.PL to adapt to new
          rrdtool-1.2 directory hierarchy, as suggested by Zac Israel.
