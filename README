@@ -1,5 +1,5 @@
 ######################################################################
-    RRDTool::OO 0.17
+    RRDTool::OO 0.18
 ######################################################################
 
 NAME
@@ -614,6 +614,46 @@ DESCRIPTION
 
     Often handy for cut-and-paste.
 
+  Dry Run Mode
+    If you want to use "RRDTool::OO" to create RRD commands without
+    executing them directly, thanks to Jacquelin Charbonnel, there's the
+    *dry run* mode. Here's how it works:
+
+        my $rrd = RRDTool::OO->new(
+            file => "myrrdfile.rrd",
+            dry_run => 1
+        );
+
+    With *dry_run* set to a true value, you can run commands like
+
+        $rrd->create(
+              step        => 60,
+              data_source => { name      => "mydatasource",
+                               type      => "GAUGE" },
+              archive     => { rows      => 5 });
+
+    but since *dry_mode* is on, they won't be handed through to the rrdtool
+    layer anymore. Instead, RRDTool::OO allows you to retrieve a reference
+    to the RRDs function it was about to call including its arguments:
+
+        my ($subref, $args) = $rrd->get_exec_env();
+
+    You can now examine or modify the subroutine reference $subref or the
+    arguments in the array reference $args. Later, simply call
+
+        $subref->(@$args);
+
+    to execute the RRDs function with the modified argument list later. In
+    this case, @$args would contain the following items:
+
+        ("myrrdfile.rrd", "--step", "60", 
+         "DS:mydatasource:GAUGE:120:U:U", "RRA:MAX:0.5:1:5")
+
+    If you're interested in the RRD function name to be executed, retrieve
+    the third parameter of "get_exec_env":
+
+        my ($subref, $args, $funcname) = $rrd->get_exec_env();
+
 INSTALLATION
     "RRDTool::OO" requires a *rrdtool* installation with the "RRDs" Perl
     module, that comes with the "rrdtool" distribution.
@@ -655,7 +695,7 @@ AUTHOR
     Mike Schilli, <m@perlmeister.com>
 
 COPYRIGHT AND LICENSE
-    Copyright (C) 2004, 2005 by Mike Schilli
+    Copyright (C) 2004-2007 by Mike Schilli
 
     This library is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself, either Perl version 5.8.3 or, at
