@@ -1,4 +1,8 @@
 
+0.19 (05/12/2007)
+    (ms) Added 'strict' mode (defaults to true).
+    (ms) Added latest graph parameters from the latest rrdtool release.
+
 0.18 (05/12/2007)
     (ms) Added 'dry mode' patch by Jacquelin Charbonnel.
 

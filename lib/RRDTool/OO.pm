@@ -7,12 +7,12 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.18';
+our $VERSION = '0.19';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
     new        => { mandatory => ['file'],
-                    optional  => [qw(raise_error dry_run)],
+                    optional  => [qw(raise_error dry_run strict)],
                   },
     create     => { mandatory => [qw(data_source archive)],
                     optional  => [qw(step start)],
@@ -40,6 +40,9 @@ our $OPTIONS = {
                                      force_rules_legend title step draw
                                      line area shift tick
                                      print gprint vrule comment font
+                                     no_gridfit font_render_mode
+                                     font_smoothing_threshold slope_mode
+                                     tabwidth units watermark zoom
                                     )],
                     draw      => {
                       mandatory => [qw()],
@@ -138,9 +141,21 @@ my %RRDs_functions = (
 );
 
 #################################################
+sub option_add {
+#################################################
+    my($self, $method, @options) = @_;
+
+    my @parts = split m#/#, $method;
+    my $ref = $OPTIONS;
+    $ref = $ref->{$_} for @parts;
+
+    push @{ $ref->{optional} }, $_ for @options;
+}
+
+#################################################
 sub check_options {
 #################################################
-    my($method, $options) = @_;
+    my($self, $method, $options) = @_;
 
     $options = [] unless defined $options;
 
@@ -166,11 +181,13 @@ sub check_options {
     
         # Check if all of the optional parameters we got are indeed
         # valid optional parameters
-    for(keys %options_hash) {
-        if(! exists $optional{$_} and
-           ! exists $mandatory{$_}) {
-            Log::Log4perl->get_logger("")->logcroak(
-                "Illegal parameter '$_' in $method()");
+    if($self->{strict}) {
+        for(keys %options_hash) {
+            if(! exists $optional{$_} and
+               ! exists $mandatory{$_}) {
+                Log::Log4perl->get_logger("")->logcroak(
+                    "Illegal parameter '$_' in $method()");
+            }
         }
     }
 
@@ -182,25 +199,30 @@ sub new {
 #################################################
     my($class, %options) = @_;
 
-    check_options "new", [%options];
-
     my $self = {
-        raise_error       => 1,
+        raise_error        => 1,
+        strict             => 1,
         dry_run            => 0,
-        meta              => 
+        exec_subref        => undef,
+        exec_args          => [],
+        exec_func          => [],
+        meta               => 
             { discovered   => 0,
               cfuncs       => [],
               cfuncs_hash  => {},
               dsnames      => [],
               dsnames_hash => {},
-              exec_subref  => undef,
-              exec_args    => [],
-              exec_func    => [],
             },
         %options,
     };
 
     bless $self, $class;
+
+      # For this one, we need to be strict
+    local $self->{strict} = 1;
+    $self->check_options("new", [%options]);
+
+    return $self;
 }
 
 #################################################
@@ -217,7 +239,7 @@ sub create {
 #################################################
     my($self, @options) = @_;
 
-    check_options "create", \@options;
+    $self->check_options("create", \@options);
     my %options_hash = @options;
 
     my @archives;
@@ -231,10 +253,10 @@ sub create {
     DEBUG "Archives: ", scalar @archives, " Sources: ", scalar @data_sources;
 
     for(@archives) {
-        check_options "create/archive", [%$_];
+        $self->check_options("create/archive", [%$_]);
     }
     for(@data_sources) {
-        check_options "create/data_source", [%$_];
+        $self->check_options("create/data_source", [%$_]);
     }
 
     my @rrdtool_options = ($self->{file});
@@ -295,9 +317,9 @@ sub RRDs_execute {
     $logger->info("rrdtool '$command' ", join " ", map { "'$_'" } @args);
 
     if ($self->{dry_run}) {
-        $self->{meta}->{exec_subref} = $RRDs_functions{$command} ;
-        $self->{meta}->{exec_args}   = \@args ;
-        $self->{meta}->{exec_func}   = $command;
+        $self->{exec_subref} = $RRDs_functions{$command} ;
+        $self->{exec_args}   = \@args ;
+        $self->{exec_func}   = $command;
         return ;
     }
 	
@@ -333,9 +355,9 @@ sub get_exec_env {
     my($self) = @_;
 
     # returns stored environment in previous dry-run exec
-    return ($self->{meta}->{exec_subref},
-            $self->{meta}->{exec_args},
-            $self->{meta}->{exec_func},
+    return ($self->{exec_subref},
+            $self->{exec_args},
+            $self->{exec_func},
            );
 }
 
@@ -347,7 +369,7 @@ sub update {
         # Expand short form
     @options = (value => $options[0]) if @options == 1;
 
-    check_options "update", \@options;
+    $self->check_options("update", \@options);
 
     my %options_hash = @options;
 
@@ -380,7 +402,7 @@ sub fetch_start {
 #################################################
     my($self, @options) = @_;
 
-    check_options "fetch_start", \@options;
+    $self->check_options("fetch_start", \@options);
 
     my %options_hash = @options;
 
@@ -496,7 +518,7 @@ sub graph {
 
     my @trailing_options = ();
 
-    check_options "graph", \@options;
+    $self->check_options("graph", \@options);
 
     my @colors = ();
     my @prints = ();
@@ -519,33 +541,33 @@ sub graph {
             push @draws, $options[$i+1];
             $nof_draws++;
         } elsif($options[$i] eq "color") {
-            check_options "graph/color", [%{$options[$i+1]}];
+            $self->check_options("graph/color", [%{$options[$i+1]}]);
             for(keys %{$options[$i+1]}) {
                 push @colors, "--color", 
                               uc($_) . "$options[$i+1]->{$_}";
             }
         } elsif($options[$i] eq "print") {
-            check_options "graph/print", [%{$options[$i+1]}];
+            $self->check_options("graph/print", [%{$options[$i+1]}]);
             push @items, ['print', [$options[$i], $options[$i+1]]];
         } elsif($options[$i] eq "gprint") {
-            check_options "graph/gprint", [%{$options[$i+1]}];
+            $self->check_options("graph/gprint", [%{$options[$i+1]}]);
             push @items, ['print', [$options[$i], $options[$i+1]]];
         } elsif($options[$i] eq "comment") {
             push @items, ['print', option_expand(@options[$i, $i+1])];
         } elsif($options[$i] eq "line") {
-            check_options "graph/line", [%{$options[$i+1]}];
+            $self->check_options("graph/line", [%{$options[$i+1]}]);
             push @items, ['print', option_expand(@options[$i, $i+1])];
         } elsif($options[$i] eq "area") {
-            check_options "graph/area", [%{$options[$i+1]}];
+            $self->check_options("graph/area", [%{$options[$i+1]}]);
             push @items, ['print', option_expand(@options[$i, $i+1])];
         } elsif($options[$i] eq "vrule") {
-            check_options "graph/vrule", [%{$options[$i+1]}];
+            $self->check_options("graph/vrule", [%{$options[$i+1]}]);
             push @items, ['vrule', [$options[$i], $options[$i+1]]];
         } elsif($options[$i] eq "tick") {
-            check_options "graph/tick", [%{$options[$i+1]}];
+            $self->check_options("graph/tick", [%{$options[$i+1]}]);
             push @items, ['print', option_expand(@options[$i, $i+1])];
         } elsif($options[$i] eq "shift") {
-            check_options "graph/shift", [%{$options[$i+1]}];
+            $self->check_options("graph/shift", [%{$options[$i+1]}]);
             push @items, ['print', option_expand(@options[$i, $i+1])];
         } elsif($options[$i] eq "font") {
             push @fonts,$options[$i+1];
@@ -586,7 +608,7 @@ sub graph {
 
     for(@fonts) {
 
-        check_options "graph/font", [%$_];
+        $self->check_options("graph/font", [%$_]);
 
         $_->{size}     ||= 8;
         $_->{element}  ||= 'default';
@@ -854,7 +876,7 @@ sub process_draw {
 ###########################################
     my($self, $p, $options, $options_hash, $draw_count) = @_;
 
-    check_options "graph/draw", [%$p];
+    $self->check_options("graph/draw", [%$p]);
 
         $p->{thickness} ||= 1;        # LINE1 is default
         $p->{color}     ||= 'FF0000'; # red is default
@@ -1645,6 +1667,45 @@ SYNOPSIS section of this manual page and watch the output:
     rrdtool fetch myrrdfile.rrd MAX
 
 Often handy for cut-and-paste.
+
+=head2 Allow New rrdtool Parameters
+
+C<RRDTool::OO> tracks rrdtool's progress loosely, so it might happen
+that at a given point in time, rrdtool introduces a new option that
+C<RRDTool::OO> doesn't know about yet.
+
+This might lead to problems, since default, C<RRDTool::OO> has its
+C<strict> mode enabled, rejecting all unknown options. This mode is
+usually helpful, because it catches typos (like C<"verical_label">),
+but if you want to use a new rrdtool option, it's in the way.
+
+To work around this problem until a new version of C<RRDTool::OO>
+supports the new parameter, you can use
+
+    $rrd->option_add("graph", "frobnication_level");
+
+to add it to the optional parameter list of the C<graph> (or whatever)
+rrd function. Note that some functions in C<RRDTool::OO> have 
+sub-methods, which you can specify with the dash notation.
+The C<graph> method with its various "graph/draw", "graph/color",
+"graph/font" are notable examples.
+
+And, as a band-aid, you can disable strict mode in these situation
+by setting the C<strict> parameter to 0 in C<RRDTool::OO>'s
+constructor call:
+
+    my $rrd = RRDTool::OO->new(
+        strict => 0,
+        file   => "myrrdfile.rrd",
+    ); 
+
+Note that C<RRDTool::OO> follows the convention that parameters
+names do not contain dashes, but underscores instead. So, you need
+to say C<"vertical_label">, not C<"vertical-label">. The underlying
+rrdtool layer, however, expects dashes, not underscores, which is why
+C<RRDTool::OO> converts them automatically, e.g. transforming
+C<"vertical_label"> to C<"--vertical-label"> before the 
+underlying rrdtool call happens.
 
 =head2 Dry Run Mode
 
