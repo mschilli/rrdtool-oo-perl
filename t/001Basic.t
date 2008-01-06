@@ -156,7 +156,7 @@ SKIP: {
     };
 
     if($@) {
-        like($@, qr/Permission denied/, "update on write-protected rrd");
+        ok($@, "update on write-protected rrd");
     } else {
         fail("update on write-protected rrd");
     }

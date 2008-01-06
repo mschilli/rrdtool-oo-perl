@@ -1,3 +1,6 @@
+0.20 (not yet released)
+    (ms) No longer expecting 'Permission denied' to support localized
+         OSes.
 
 0.19 (05/12/2007)
     (ms) Added 'strict' mode (defaults to true).
