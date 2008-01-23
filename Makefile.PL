@@ -12,10 +12,10 @@ eval { require RRDs; };
     #     don't need it anyway.
     # (2) as of rrdtool-1.2.11, tcl libs didn't compile, so let's
     #     leave them out.
-my $CONFIGURE_OPTS = "--prefix=/usr --disable-tcl --disable-rrdcgi";
+my $CONFIGURE_OPTS = "--enable-perl-site-install --prefix=/usr --disable-tcl --disable-rrdcgi";
 
 my $DIST_URL = 
-"http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/pub/rrdtool.tar.gz";
+"http://oss.oetiker.ch/rrdtool/pub/rrdtool.tar.gz";
 
 if($@ or !$v or $v < 1.002011) {
     print <<EOT;

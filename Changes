@@ -1,4 +1,7 @@
-0.20 (not yet released)
+0.20 (01/22/2008)
+    (ms) Bas van der Veen reported that the rrdtool download link 
+         changed to http://oss.oetiker.ch/rrdtool/pub/rrdtool.tar.gz,
+         adapted Makefile.PL.
     (ms) No longer expecting 'Permission denied' to support localized
          OSes.
 

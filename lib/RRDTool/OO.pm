@@ -1756,14 +1756,18 @@ C<RRDs> Perl module, that comes with the C<rrdtool> distribution.
 
 Download the tarball from
 
-    http://people.ee.ethz.ch/~oetiker/webtools/rrdtool/pub/rrdtool.tar.gz
+    http://oss.oetiker.ch/rrdtool/pub/rrdtool.tar.gz
 
 and then unpack, compile and install:
 
     tar zxfv rrdtool.tar.gz
-    cd rrdtool-1.0.46
+    cd rrdtool-1.2.26
+    ./configure --enable-perl-site-install --prefix=/usr \
+                --disable-tcl --disable-rrdcgi
     make
-    cd perl-shared
+    make install
+
+    cd bindings/perl-shared
     perl Makefile.PL
     ./configure
     make
@@ -1803,7 +1807,7 @@ Mike Schilli, E<lt>m@perlmeister.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2004-2007 by Mike Schilli
+Copyright (C) 2004-2008 by Mike Schilli
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.3 or,
