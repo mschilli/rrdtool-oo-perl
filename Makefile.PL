@@ -68,7 +68,7 @@ sub install_RRDs {
         die "Cannot download $DIST_URL ($!)";
     print STDERR "done.\n";
 
-    system("gzip -dc rrdtool.tar.gz | tar xfv -; cd `ls -t | grep -v gz | head -1`; ./configure $CONFIGURE_OPTS; make; cd bindings/perl-shared; perl Makefile.PL; make; make test; make install") and die "Install failed: $!";
+    system("gzip -dc rrdtool.tar.gz | tar xfv -; cd `ls -t | grep rrdtool | grep -v gz | head -1`; ./configure $CONFIGURE_OPTS; make; cd bindings/perl-shared; perl Makefile.PL; make; make test; make install") and die "Install failed: $!";
 
 }
 
