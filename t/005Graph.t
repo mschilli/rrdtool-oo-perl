@@ -1,5 +1,5 @@
 
-use Test::More tests => 15;
+use Test::More tests => 17;
 use RRDTool::OO;
 use Log::Log4perl qw(:easy);
 
@@ -438,6 +438,62 @@ unlink "mygraph.png";
       shift       => {
                 draw  => 'firstgraph',
                 offset => 1000,
+      },
+    );
+
+view("mygraph.png");
+ok(-f "mygraph.png", "Image exists");
+unlink "mygraph.png";
+
+######################################################################
+# Test stack compatibility
+######################################################################
+    $rrd->graph(
+      image          => "mygraph.png",
+      vertical_label => 'Stack',
+      width          => 1000,
+      start          => $start_time,
+      end            => $start_time + $nof_iterations * 60,
+      draw           => {
+        type      => 'stack',
+        color     => 'FF0000', # red area
+        name      => 'firstgraph',
+        legend    => 'first',
+      },
+      draw           => {
+        type      => 'stack',
+        color     => '00FF00', # green area
+        name      => 'secondgraph',
+        legend    => 'second',
+      },
+    );
+
+view("mygraph.png");
+ok(-f "mygraph.png", "Image exists");
+unlink "mygraph.png";
+
+######################################################################
+# Test stacks
+######################################################################
+    $rrd->graph(
+      image          => "mygraph.png",
+      vertical_label => 'Stack',
+      width          => 1000,
+      start          => $start_time,
+      end            => $start_time + $nof_iterations * 60,
+      draw           => {
+        type      => 'area',
+        color     => 'FF0000', # red area
+        name      => 'firstgraph',
+        legend    => 'first',
+        stack     => 1,
+      },
+      draw           => {
+        type      => 'line',
+        color     => '00FF00', # green line
+        name      => 'secondgraph',
+        legend    => 'second',
+        stack     => 1,
       },
     );
 

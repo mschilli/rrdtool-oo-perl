@@ -1,3 +1,8 @@
+0.21 (01/23/2008)
+    (ms) Provided backwards compatibility to rrdtool-1.0 for 
+         draw/type=stack, which now translates to an area with the 
+         :STACK option.
+
 0.20 (01/22/2008)
     (ms) Bas van der Veen reported that the rrdtool download link 
          changed to http://oss.oetiker.ch/rrdtool/pub/rrdtool.tar.gz,

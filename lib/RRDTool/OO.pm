@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.20';
+our $VERSION = '0.21';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -47,7 +47,9 @@ our $OPTIONS = {
                     draw      => {
                       mandatory => [qw()],
                       optional  => [qw(file dsname cfunc thickness 
-                                       type color legend name cdef vdef)],
+                                       type color legend name cdef vdef
+                                       stack
+                                      )],
                     },
                     color     => {
                       mandatory => [qw()],
@@ -921,6 +923,7 @@ sub process_draw {
 
         my $draw_attributes = ":$p->{name}#$p->{color}";
         $draw_attributes .= ":$p->{legend}" if length $p->{legend};
+        $draw_attributes .= ":STACK" if exists $p->{stack};
 
         if($p->{type} eq "hidden") {
             # Invisible graph
@@ -929,7 +932,8 @@ sub process_draw {
         } elsif($p->{type} eq "area") {
             push @$options, "AREA$draw_attributes";
         } elsif($p->{type} eq "stack") {
-            push @$options, "STACK$draw_attributes";
+              # modified for backwards compatibility
+            push @$options, "AREA$draw_attributes:STACK";
         } else {
             die "Invalid graph type: $p->{type}";
         }
