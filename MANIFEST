@@ -6,7 +6,6 @@ MANIFEST
 MANIFEST.SKIP
 META.yml			Module meta-data (added by MakeMaker)
 README
-rrdtool.tar.gz
 t/001Basic.t
 t/002Pod.t
 t/003Discover.t
