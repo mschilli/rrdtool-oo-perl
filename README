@@ -269,10 +269,14 @@ DESCRIPTION
             );
 
         If "draw" doesn't define a "type", it defaults to "line". If you
-        don't want to define a type (because the graph shouldn't drawn), use
-        "type => "hidden"". Other values are "area" for solid colored areas
-        and "stack" for graphical values stacked on top of each other. And
-        you can certainly have more than one graph in the picture:
+        don't want to define a type (because the graph shouldn't be drawn),
+        use "type => "hidden"". Other values are "area" for solid colored
+        areas. The "stack" type (for graphical values stacked on top of each
+        other) has been deprecated sind rrdtool-1.2, but RRDTool::OO still
+        supports it by transforming it into an 'area' type with a 'stack'
+        option.
+
+        And you can certainly have more than one graph in the picture:
 
             $rrd->graph(
               image          => $image_file_name,
@@ -283,7 +287,8 @@ DESCRIPTION
                 dsname    => "load",
                 cfunc     => 'MAX'},
               draw        => {
-                type      => 'stack',
+                type      => 'area',
+                stack     => 1,
                 color     => '00FF00', # a green area stacked on top of the red one 
                 dsname    => "load",
                 cfunc     => 'AVERAGE'},
@@ -301,7 +306,8 @@ DESCRIPTION
               },
               draw        => {
                 file      => "file2.rrd",
-                type      => 'stack',
+                type      => 'area',
+                stack     => 1,
                 color     => '00FF00', # a green area stacked on top of the red one 
                 dsname    => "load",
                 legend    => "Second Source",
