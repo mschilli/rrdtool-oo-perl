@@ -24,6 +24,13 @@ our $OPTIONS = {
                       mandatory => [qw(rows)],
                       optional  => [qw(cfunc cpoints xff)],
                     },
+                    hwpredict   => {
+                      mandatory => [qw(alpha beta gamma)],
+                      optional  => [qw(seasonal_period
+                                       threshold
+                                       window_length
+                                      )],
+                    },
                   },
     update     => { mandatory => [qw()],
                     optional  => [qw(time value values)],
@@ -249,6 +256,7 @@ sub create {
 
     for(my $i=0; $i < @options; $i += 2) {
         push @archives, $options[$i+1] if $options[$i] eq "archive";
+        push @hwpredict, $options[$i+1] if $options[$i] eq "hwpredict";
         push @data_sources, $options[$i+1] if $options[$i] eq "data_source";
     }
 
@@ -259,6 +267,9 @@ sub create {
     }
     for(@data_sources) {
         $self->check_options("create/data_source", [%$_]);
+    }
+    for(@hwpredict) {
+        $self->check_options("create/hwpredict", [%$_]);
     }
 
     my @rrdtool_options = ($self->{file});
@@ -290,6 +301,31 @@ sub create {
        if(! exists $_->{xff}) {
            $_->{xff} = 0.5;
        }
+
+       $_->{cpoints} ||= 1;
+
+       if($_->{cpoints} > 1 and
+          !exists $_->{cfunc}) {
+           LOGDIE "Must specify cfunc if cpoints > 1";
+       }
+       if(! exists $_->{cfunc}) {
+           $_->{cfunc} = 'MAX';
+       }
+       
+       $self->meta_data("cfuncs", $_->{cfunc}, 1);
+
+       push @rrdtool_options, 
+           "RRA:$_->{cfunc}:$_->{xff}:$_->{cpoints}:$_->{rows}";
+    }
+
+    for(@hwpredict) {
+      # RRA:HWPREDICT:rows:alpha:beta:seasonal period[:rra-num]
+      # RRA:SEASONAL:seasonal period:gamma:rra-num
+      # RRA:DEVSEASONAL:seasonal period:gamma:rra-num
+      # RRA:DEVPREDICT:rows:rra-num
+      # RRA:FAILURES:rows:threshold:window length:rra-num
+
+       DEBUG "hwpredict: @{[%$_]}";
 
        $_->{cpoints} ||= 1;
 
@@ -1059,10 +1095,8 @@ C<RRDTool::OO> abstracts away implementation details of the RRD engine,
 uses easy to memorize named parameters and sets meaningful defaults 
 for parameters not needed in simple cases.
 For the experienced user, however, it provides full access to
-I<rrdtool>'s API.
-(Please check L<Development Status> to verify
-how much of it has been implemented yet, though, since this module
-is under development :).
+I<rrdtool>'s API (if you find a feature that's not implemented, let
+me know).
 
 =head2 FUNCTIONS
 
@@ -1615,6 +1649,44 @@ Alter a RRD's data source configuration values:
 
 Return the message of the last error that occurred while interacting
 with C<RRDTool::OO>.
+
+=head2 Aberrant behavior detection
+
+RRDTool supports aberrant behavior detection (ABD), which takes a data
+source, stuffs its values into a special RRA, smoothes the data stream,
+tries to predict future values and triggers an alert if actual values
+are way off the predicted values.
+
+Using a fairly elaborate algorithm not only allows it to find out if
+a data source produces a value that exceeds a certain fixed threshold. 
+It constantly adapts its parameters to 
+
+On top of that, it can deal with data input that displays continuously
+rising values. And, furthermore, it deals with seasonal cycles 
+
+Note that with ABD enabled, RRDTool won't 
+consolidate the data from a data source before stuffing it into 
+the HWPREDICT RRAs, as the whole point of ABD is to smooth unfiltered
+data and predict future values.
+
+        # Create a round-robin database
+    $rrd->create(
+         step        => 1,  # one-second intervals
+         data_source => { name      => "mydatasource",
+                          type      => "GAUGE" },
+         hwpredict   => { alpha => 0.5,
+                          beta  => 0.5,
+                          gamma => 0.5,
+                        },
+    );
+
+RRDTool 
+
+    * RRA:HWPREDICT:rows:alpha:beta:seasonal period[:rra-num]
+    * RRA:SEASONAL:seasonal period:gamma:rra-num
+    * RRA:DEVSEASONAL:seasonal period:gamma:rra-num
+    * RRA:DEVPREDICT:rows:rra-num
+    * RRA:FAILURES:rows:threshold:window length:rra-num
 
 =back
 
