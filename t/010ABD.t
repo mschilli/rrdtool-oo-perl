@@ -5,11 +5,12 @@ use RRDTool::OO;
 
 use Log::Log4perl qw(:easy);
 
-plan tests => 6;
+plan tests => 1;
 
-Log::Log4perl->easy_init({level => $INFO, layout => "%L: %m%n", 
-                          category => 'rrdtool',
-                          file => 'stdout'});
+#Log::Log4perl->easy_init({level => $INFO, layout => "%L: %m%n", 
+#                          category => 'rrdtool',
+#                          file => 'stdout'});
+#
 
 my $rrd = RRDTool::OO->new(
   file        => 'foo',
@@ -42,7 +43,7 @@ my $rc = $rrd->create(
                      alpha           => 0.50,
                      beta            => 0.50,
                      gamma           => 0.01,
-seasonal_period => 30,
+                     seasonal_period => 30,
                      threshold       => 2,
                      window_length   => 9,
                    },
@@ -69,43 +70,52 @@ for(0..$nof_iterations) {
     $rrd->update(time => $time, value => $value);
 }
 
-$rrd->graph(
-    image => "mygraph.png",
-    start => $start_time,
-    end   => $time,
-    draw           => {
-        type   => "line",
-        color  => 'FF0000',
-        cfunc  => 'MAX',
-        legend => 'max',
-    },
-    draw           => {
-        type   => "line",
-        color  => '0000FF',
-        cfunc  => 'HWPREDICT',
-        legend => 'hwpredict',
-    },
-    draw           => {
-        type   => "line",
-        color  => '00FF00',
-        cfunc  => 'SEASONAL',
-        legend => 'seasonal',
-    },
-    draw           => {
-        type   => "area",
-        color  => '00eeee',
-        cfunc  => 'FAILURES',
-        legend => 'error',
-    },
-);
+# $rrd->graph(
+#     image => "mygraph.png",
+#     start => $start_time,
+#     end   => $time,
+#     draw           => {
+#         type   => "line",
+#         color  => 'FF0000',
+#         cfunc  => 'MAX',
+#         legend => 'max',
+#     },
+#     draw           => {
+#         type   => "line",
+#         color  => '0000FF',
+#         cfunc  => 'HWPREDICT',
+#         legend => 'hwpredict',
+#     },
+#     draw           => {
+#         type   => "line",
+#         color  => '00FF00',
+#         cfunc  => 'SEASONAL',
+#         legend => 'seasonal',
+#     },
+#     draw           => {
+#         type   => "area",
+#         color  => '00eeee',
+#         cfunc  => 'FAILURES',
+#         legend => 'error',
+#     },
+# );
+#
+#system("xv mygraph.png");
 
-system("xv mygraph.png");
+isnt(count_failures($rrd, $start_time), 0, "aberrant behaviour detected");
 
-__END__
-$rrd->fetch_start(start => $start_time, cfunc => "FAILURES");
-$rrd->fetch_skip_undef();
-my $count = 0;
-while(my($time, $val) = $rrd->fetch_next()) {
-    last unless defined $val;
-    print "$time: $val\n";
+###########################################
+sub count_failures {
+###########################################
+    my($rrd, $start_time) = @_;
+
+    $rrd->fetch_start(start => $start_time, cfunc => "FAILURES");
+    $rrd->fetch_skip_undef();
+    my $count = 0;
+    while(my($time, $val) = $rrd->fetch_next()) {
+        last unless defined $val;
+        $count++ if $val;
+    }
+
+    return $count;
 }
