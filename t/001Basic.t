@@ -33,7 +33,7 @@ like($@, qr/Mandatory parameter/, "create missing data_source");
 
     # create missing archive
 eval { $rrd->create( data_source => {} ); };
-like($@, qr/Mandatory parameter/, "create missing archive");
+like($@, qr/No archives/, "create missing archive");
 
     # create with superfluous param
 eval { $rrd->create(
