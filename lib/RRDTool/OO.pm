@@ -14,8 +14,8 @@ our $OPTIONS = {
     new        => { mandatory => ['file'],
                     optional  => [qw(raise_error dry_run strict)],
                   },
-    create     => { mandatory => [qw(data_source archive)],
-                    optional  => [qw(step start)],
+    create     => { mandatory => [qw(data_source)],
+                    optional  => [qw(step start hwpredict archive)],
                     data_source => { 
                       mandatory => [qw(name type)],
                       optional  => [qw(min max heartbeat)],
@@ -25,10 +25,11 @@ our $OPTIONS = {
                       optional  => [qw(cfunc cpoints xff)],
                     },
                     hwpredict   => {
-                      mandatory => [qw(alpha beta gamma)],
-                      optional  => [qw(seasonal_period
-                                       threshold
-                                       window_length
+                      mandatory => [qw(rows)],
+                      optional  => [qw(
+                                       alpha beta gamma
+                                       seasonal_period
+                                       threshold window_length
                                       )],
                     },
                   },
@@ -253,11 +254,16 @@ sub create {
 
     my @archives;
     my @data_sources;
+    my @hwpredict;
 
     for(my $i=0; $i < @options; $i += 2) {
         push @archives, $options[$i+1] if $options[$i] eq "archive";
         push @hwpredict, $options[$i+1] if $options[$i] eq "hwpredict";
         push @data_sources, $options[$i+1] if $options[$i] eq "data_source";
+    }
+
+    if(!@archives and !@hwpredict) {
+        LOGDIE "No archives specified (use either 'archive' or 'hwpredict')";
     }
 
     DEBUG "Archives: ", scalar @archives, " Sources: ", scalar @data_sources;
@@ -318,6 +324,8 @@ sub create {
            "RRA:$_->{cfunc}:$_->{xff}:$_->{cpoints}:$_->{rows}";
     }
 
+    my $hwpredict_num = (scalar @archives) + 1;
+
     for(@hwpredict) {
       # RRA:HWPREDICT:rows:alpha:beta:seasonal period[:rra-num]
       # RRA:SEASONAL:seasonal period:gamma:rra-num
@@ -327,20 +335,41 @@ sub create {
 
        DEBUG "hwpredict: @{[%$_]}";
 
-       $_->{cpoints} ||= 1;
+       def_or($_->{alpha}, 0.1);
+       def_or($_->{beta},  0.1);
+       def_or($_->{gamma}, $_->{alpha});
+       def_or($_->{threshold}, 7);
+       def_or($_->{window_length}, 9);
+       def_or($_->{seasonal_period}, int($_->{rows}/5) );
 
-       if($_->{cpoints} > 1 and
-          !exists $_->{cfunc}) {
-           LOGDIE "Must specify cfunc if cpoints > 1";
-       }
-       if(! exists $_->{cfunc}) {
-           $_->{cfunc} = 'MAX';
-       }
-       
-       $self->meta_data("cfuncs", $_->{cfunc}, 1);
-
+         #0
        push @rrdtool_options, 
-           "RRA:$_->{cfunc}:$_->{xff}:$_->{cpoints}:$_->{rows}";
+        "RRA:HWPREDICT:$_->{rows}:$_->{alpha}:" .
+        "$_->{beta}:$_->{seasonal_period}:" . 
+        ($hwpredict_num + 1);
+
+         #1
+       push @rrdtool_options, 
+        "RRA:SEASONAL:$_->{seasonal_period}:$_->{gamma}:" .
+        ($hwpredict_num + 0);
+
+         #2
+       push @rrdtool_options, 
+        "RRA:DEVSEASONAL:$_->{seasonal_period}:$_->{gamma}:" .
+        ($hwpredict_num + 3);
+
+         #3
+       push @rrdtool_options, 
+        "RRA:DEVPREDICT:$_->{rows}:" . 
+        ($hwpredict_num + 0);
+
+         #4
+       push @rrdtool_options, 
+        "RRA:FAILURES:$_->{rows}:$_->{threshold}:" .
+        "$_->{window_length}:" .
+        ($hwpredict_num + 2);
+
+       $hwpredict_num++;
     }
 
     $self->RRDs_execute("create", @rrdtool_options);
@@ -1028,6 +1057,14 @@ sub process_print {
     }
 }
 
+##########################################
+sub def_or($$) {
+###########################################
+    if(! defined $_[0]) {
+        $_[0] = $_[1];
+    }
+}
+
 1;
 
 __END__
@@ -1659,34 +1696,80 @@ are way off the predicted values.
 
 Using a fairly elaborate algorithm not only allows it to find out if
 a data source produces a value that exceeds a certain fixed threshold. 
-It constantly adapts its parameters to 
+The algorithm constantly adapts its parameters to the input data and 
+acts dynamically on slowly changing values.
 
-On top of that, it can deal with data input that displays continuously
-rising values. And, furthermore, it deals with seasonal cycles 
+The C<alpha> parameter specifies the baseline and
+lies between 0 and 1. Values close to 1 specify 
+that most recent values have the most weight on the prediction, whereas
+values close to 0 indicate that past values carry higher weight.
 
-Note that with ABD enabled, RRDTool won't 
-consolidate the data from a data source before stuffing it into 
-the HWPREDICT RRAs, as the whole point of ABD is to smooth unfiltered
-data and predict future values.
+On top of that, ABD can deal with data input that displays continuously
+rising values (slope). The C<beta> parameters, again between 0 and 1,
+specifies whether past values or more recent values carry the most
+weight.
+
+And, furthermore, it deals with seasonal cycles, so it won't freak out if 
+there's a daily peak at noon. The C<gamma> parameter indicates this, if
+you don't specify it, it defaults to the value of C<alpha>.
+
+In the easiest case, an RRA with aberrant behavior detection can be
+created like
 
         # Create a round-robin database
     $rrd->create(
          step        => 1,  # one-second intervals
          data_source => { name      => "mydatasource",
                           type      => "GAUGE" },
-         hwpredict   => { alpha => 0.5,
-                          beta  => 0.5,
-                          gamma => 0.5,
+         hwpredict   => { rows => 3600,
                         },
     );
 
-RRDTool 
+where C<alpha> and C<beta> default to 0.5, and the C<seasonal_period>
+defaults to 1/5 of the rows number.
 
-    * RRA:HWPREDICT:rows:alpha:beta:seasonal period[:rra-num]
+C<rows> is the number of primary data points that are stored in the RRA
+before a wrap-around happens. Note that with ABD enabled, RRDTool won't 
+consolidate the data from a data source before stuffing it into 
+the HWPREDICT RRAs, as the whole point of ABD is to smooth unfiltered
+data and predict future values.
+
+A violation happen if a new measured value falls outside of the
+prediction. If C<threshold> or more violations happen within
+C<window_length>, an error is reported to the FAILURES RRA.
+C<threshold> defaults to 7, C<window_length> to 9.
+
+A more elaborate RRD could be defined as
+
+        # Create a round-robin database
+    $rrd->create(
+         step        => 1,  # one-second intervals
+         data_source => { name      => "mydatasource",
+                          type      => "GAUGE" },
+         hwpredict   => { rows          => 3600,
+                          alpha         => 0.1,
+                          beta          => 0.1,
+                          gamma         => 0.1,
+                          threshold     => 7,
+                          window_length => 9,
+                        },
+    );
+
+If you want to peek under the hood (not that you need to, just
+for your entertainment), with the specification above, RRDTool::OO will 
+create the following five RRAs according to the RRDtool
+specification and fill in these values:
+
+    * RRA:HWPREDICT:rows:alpha:beta:seasonal_period:rra-num
     * RRA:SEASONAL:seasonal period:gamma:rra-num
     * RRA:DEVSEASONAL:seasonal period:gamma:rra-num
     * RRA:DEVPREDICT:rows:rra-num
-    * RRA:FAILURES:rows:threshold:window length:rra-num
+    * RRA:FAILURES:rows:threshold:window_length:rra-num
+
+The C<rra-num> argument is an internal index referencing other
+RRAs (for example, HWPREDICT references SEASONAL), but this will 
+be taken care of automatically by RRDTool::OO with no user
+interaction required whatsoever.
 
 =back
 
