@@ -16,9 +16,13 @@ my $rrd = RRDTool::OO->new(
   raise_error => 1,
 );
 
+END { unlink "foo"; }
+
 my $start_time     = 1080460200;
 my $nof_iterations = 100;
 my $end_time       = $start_time + $nof_iterations * 60;
+
+my $rows = 300;
 
    # Define the RRD
 my $rc = $rrd->create(
@@ -30,16 +34,17 @@ my $rc = $rrd->create(
                      min       => 0,
                      max       => 100.0,
                    },
-    archive => { rows  => 300,
+    archive => { rows  => $rows,
                  cfunc => "MAX",
                },
 
-    hwpredict   => { rows            => 300,
-                     alpha           => 0.01,
-                     beta            => 0.01,
-                     seasonal_period => 30,
+    hwpredict   => { rows            => $rows,
+                     alpha           => 0.50,
+                     beta            => 0.50,
+                     gamma           => 0.01,
+seasonal_period => 30,
                      threshold       => 2,
-                     window_length   => 3,
+                     window_length   => 9,
                    },
 );
 
@@ -54,7 +59,7 @@ for(0..$nof_iterations) {
 
 for(1..10) {
     $time += 60;
-    $rrd->update(time => $time, value => $value + 5);
+    $rrd->update(time => $time, value => 0);
 }
 
 for(0..$nof_iterations) {
@@ -69,10 +74,29 @@ $rrd->graph(
     start => $start_time,
     end   => $time,
     draw           => {
-        type   => "area",
-        color  => '0000FF',
+        type   => "line",
+        color  => 'FF0000',
         cfunc  => 'MAX',
-    }
+        legend => 'max',
+    },
+    draw           => {
+        type   => "line",
+        color  => '0000FF',
+        cfunc  => 'HWPREDICT',
+        legend => 'hwpredict',
+    },
+    draw           => {
+        type   => "line",
+        color  => '00FF00',
+        cfunc  => 'SEASONAL',
+        legend => 'seasonal',
+    },
+    draw           => {
+        type   => "area",
+        color  => '00eeee',
+        cfunc  => 'FAILURES',
+        legend => 'error',
+    },
 );
 
 system("xv mygraph.png");

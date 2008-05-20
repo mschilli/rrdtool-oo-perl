@@ -342,6 +342,10 @@ sub create {
        def_or($_->{window_length}, 9);
        def_or($_->{seasonal_period}, int($_->{rows}/5) );
 
+#       push @rrdtool_options, 
+#        "RRA:HWPREDICT:$_->{rows}:$_->{alpha}:" .
+#        "$_->{beta}:$_->{seasonal_period}:";
+
          #0
        push @rrdtool_options, 
         "RRA:HWPREDICT:$_->{rows}:$_->{alpha}:" .
@@ -356,12 +360,12 @@ sub create {
          #2
        push @rrdtool_options, 
         "RRA:DEVSEASONAL:$_->{seasonal_period}:$_->{gamma}:" .
-        ($hwpredict_num + 3);
+        ($hwpredict_num + 0);
 
          #3
        push @rrdtool_options, 
         "RRA:DEVPREDICT:$_->{rows}:" . 
-        ($hwpredict_num + 0);
+        ($hwpredict_num + 2);
 
          #4
        push @rrdtool_options, 
