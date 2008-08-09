@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/local/bin/perl
 ############################################################
 # Create a sample graph
 # Mike Schilli <mschilli1@aol.com>, 2004

@@ -1,3 +1,7 @@
+0.23 (not yet released)
+    (ms) update() now accepts DateTime objects as well (suggested by 
+         Jay Buffington)
+
 0.22 (05/20/2008)
     (ms) Added aberrant behavior detection (hwpredict) with documentation
          and test cases.

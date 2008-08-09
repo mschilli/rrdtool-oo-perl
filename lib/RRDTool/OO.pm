@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.22';
+our $VERSION = '0.23';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -252,6 +252,11 @@ sub create {
     $self->check_options("create", \@options);
     my %options_hash = @options;
 
+      # If it's a DateTime object, handle it gracefully
+    if( ref $options_hash{start} eq "DateTime" ) {
+        $options_hash{start} = $options_hash{start}->epoch();
+    }
+
     my @archives;
     my @data_sources;
     my @hwpredict;
@@ -445,6 +450,11 @@ sub update {
     my %options_hash = @options;
 
     $options_hash{time} = "N" unless exists $options_hash{time};
+
+      # If it's a DateTime object, handle it gracefully
+    if( ref $options_hash{time} eq "DateTime" ) {
+        $options_hash{time} = $options_hash{time}->epoch();
+    }
 
     my $update_string  = "$options_hash{time}:";
     my @update_options = ();
@@ -655,6 +665,13 @@ sub graph {
     delete $options_hash{area};
     delete $options_hash{tick};
     delete $options_hash{'shift'};
+
+      # If it's a DateTime object, handle it gracefully
+    for my $o (qw(start end)) {
+        if( ref $options_hash{$o} eq "DateTime" ) {
+            $options_hash{$o} = $options_hash{$o}->epoch();
+        }
+    }
 
     @options = add_dashes(\%options_hash);
 
