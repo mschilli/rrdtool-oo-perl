@@ -1,4 +1,5 @@
 Changes
+eg/dt
 eg/graph.pl
 lib/RRDTool/OO.pm
 Makefile.PL
