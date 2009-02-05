@@ -55,6 +55,7 @@ my $value = 2;
 for(0..$nof_iterations) {
     $time  += 60;
     $value += 0.1;
+    $value = sprintf "%.2f", $value;
     $rrd->update(time => $time, value => $value);
 }
 
@@ -66,6 +67,7 @@ for(1..10) {
 for(0..$nof_iterations) {
     $time  += 60;
     $value += 0.1;
+    $value = sprintf "%.2f", $value;
 
     $rrd->update(time => $time, value => $value);
 }

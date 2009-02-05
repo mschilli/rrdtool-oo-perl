@@ -1,6 +1,8 @@
-0.23 (not yet released)
+0.23 (02/05/2009)
     (ms) update() now accepts DateTime objects as well (suggested by 
          Jay Buffington)
+    (ms) [rt.cpan.org #43011] Fixed rounding error on 64-bit systems
+         reported by Todd E. Rinaldo
 
 0.22 (05/20/2008)
     (ms) Added aberrant behavior detection (hwpredict) with documentation

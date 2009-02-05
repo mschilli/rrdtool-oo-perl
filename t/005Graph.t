@@ -71,7 +71,7 @@ ok(-f "foo", "RRD exists");
 
 for(0..$nof_iterations) {
     my $time = $start_time + $_ * 60;
-    my $value = 2 + $_ * 0.1;
+    my $value = sprintf "%.2f", 2 + $_ * 0.1;
 
     $rrd->update(time => $time, values => { 
         load1 => $value,
@@ -117,7 +117,7 @@ ok(-f "bar", "RRD exists");
 
 for(0..$nof_iterations) {
     my $time = $start_time + $_ * 60;
-    my $value = 10 - $_ * 0.1;
+    my $value = sprintf "%.2f", 10 - $_ * 0.1;
 
     $rrd2->update(time => $time, values => { 
         load3 => $value,
