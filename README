@@ -1,5 +1,5 @@
 ######################################################################
-    RRDTool::OO 0.23
+    RRDTool::OO 0.24
 ######################################################################
 
 NAME
@@ -651,6 +651,38 @@ DESCRIPTION
     The following methods are not yet implemented:
 
     "rrdresize", "xport", "rrdcgi".
+
+  Print Output
+    The "graph" method can be configured to have RRDTool's "graph" function
+    to print data. Calling rrdtool on the command line, this data ends up on
+    STDOUT, but calling something like
+
+        $rrd->graph(
+          image          => "mygraph.png",
+          start          => $start_time,
+
+          # ...
+
+          draw           => {
+              type      => "hidden",
+              name      => "in95precent",
+              vdef      => "firstdraw,95,PERCENT"
+          },
+
+          print         => {
+              draw      => 'in95percent',
+              format    => "95 Percent Result = %3.2lf",
+            },
+
+          # ...
+
+    captures the print data internally. To get access to a reference to the
+    array containing the different pieces of data written in this way, call
+
+        my $array_ref = $rrd->print_output();
+
+    If no print output is available, the array referenced by $array_ref is
+    empty.
 
   Error Handling
     By default, "RRDTool::OO"'s methods will throw fatal errors (as in:
