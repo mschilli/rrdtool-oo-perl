@@ -1851,7 +1851,7 @@ data ends up on STDOUT, but calling something like
 captures the print data internally. To get access to a reference to the array
 containing the different pieces of data written in this way, call
 
-    my $array_ref = $rrd->print_output();
+    my $array_ref = $rrd->print_results();
 
 If no print output is available, the array referenced by C<$array_ref>
 is empty.
