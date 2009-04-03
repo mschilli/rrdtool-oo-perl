@@ -3,11 +3,16 @@ use Test::More tests => 17;
 use RRDTool::OO;
 use Log::Log4perl qw(:easy);
 
+$SIG{__WARN__} = sub {
+    use Carp qw(cluck);
+    print cluck();
+};
+
 ##############################################
 # Configuration
 ##############################################
 my $VIEW     = 0;     # Display graphs
-my $LOGLEVEL = $ERROR;  # Level of detail
+my $LOGLEVEL = $INFO;  # Level of detail
 ##############################################
 
 sub view {
@@ -15,9 +20,11 @@ sub view {
     system("xv $_[0]");
 }
 
-Log::Log4perl->easy_init({level => $LOGLEVEL, layout => "%m%n", 
-                          category => 'rrdtool',
-                          file => 'stdout'});
+#Log::Log4perl->easy_init({level => $LOGLEVEL, layout => "%m%n", 
+##                          category => 'rrdtool',
+#                          file => 'stderr',
+#                          layout => '%F{1}-%L: %m%n',
+#                         });
 
 my $rrd = RRDTool::OO->new(file => "foo");
 
@@ -530,6 +537,55 @@ VDEF:
 view("mygraph.png");
 ok(-f "mygraph.png", "Image exists");
 unlink "mygraph.png";
+
+PRINT:
+######################################################################
+# Test print
+######################################################################
+    $rrd->graph(
+      image          => "mygraph.png",
+      vertical_label => 'Test vdef, gprint',
+      width          => 1000,
+      start          => $start_time,
+      end            => $start_time + $nof_iterations * 60,
+      draw           => {
+        type      => 'line',
+        name      => 'firstdraw',
+        legend    => 'Unmodified Load',
+      },
+      draw           => {
+        type      => 'hidden',
+        name      => 'average_of_firstgraph',
+        vdef      => 'firstdraw,AVERAGE',
+      },
+      print         => {
+        draw      => 'average_of_firstgraph',
+        format    => "\"Average=%lf\"",
+      },
+    );
+
+    $rrd->graph(
+      image          => "mygraph.png",
+      start          => $start_time,
+      end            => $start_time + $nof_iterations * 60,
+      draw           => {
+          type      => "hidden",
+          name      => "firstdraw",
+          #cfunc     => 'AVERAGE'
+      },
+      draw           => {
+          type      => "hidden",
+          color     => '00FF00', # green line
+          name      => "in95precent",
+          vdef      => "firstdraw,95,PERCENT"
+      },
+
+      print         => {
+          draw      => 'in95precent',
+          #format    => "\"%6.2lf %Sbps\"",
+          format    => "oink %6.2lf",
+        },
+  );
 
 unlink("foo");
 unlink("bar");
