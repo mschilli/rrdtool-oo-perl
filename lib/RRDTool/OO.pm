@@ -216,6 +216,7 @@ sub new {
         exec_subref        => undef,
         exec_args          => [],
         exec_func          => [],
+        print_results      => [],
         meta               => 
             { discovered   => 0,
               cfuncs       => [],
@@ -600,6 +601,7 @@ sub graph {
     my @trailing_options = ();
 
     $self->check_options("graph", \@options);
+    $self->print_results( [] );
 
     my @colors = ();
     my @prints = ();
@@ -724,7 +726,28 @@ sub graph {
     push @options, @colors;
     unshift @options, $image;
 
-    $self->RRDs_execute("graph", @options);
+    my($print_results, $img_width, $img_height) = 
+        $self->RRDs_execute("graph", @options);
+
+    if(!defined $print_results) {
+        return undef;
+    }
+
+    $self->print_results( $print_results );
+
+    return 1;
+}
+
+###########################################
+sub print_results {
+###########################################
+    my($self, $results) = @_;
+
+    if(defined $results) {
+        $self->{results} = $results;
+    }
+
+    return $self->{results};
 }
 
 #################################################
@@ -1799,6 +1822,39 @@ interaction required whatsoever.
 The following methods are not yet implemented:
 
 C<rrdresize>, C<xport>, C<rrdcgi>.
+
+=head2 Print Output
+
+The C<graph> method can be configured to have RRDTool's C<graph>
+function to print data. Calling rrdtool on the command line, this
+data ends up on STDOUT, but calling something like
+
+    $rrd->graph(
+      image          => "mygraph.png",
+      start          => $start_time,
+
+      # ...
+
+      draw           => {
+          type      => "hidden",
+          name      => "in95precent",
+          vdef      => "firstdraw,95,PERCENT"
+      },
+
+      print         => {
+          draw      => 'in95percent',
+          format    => "95 Percent Result = %3.2lf",
+        },
+
+      # ...
+
+captures the print data internally. To get access to a reference to the array
+containing the different pieces of data written in this way, call
+
+    my $array_ref = $rrd->print_output();
+
+If no print output is available, the array referenced by C<$array_ref>
+is empty.
 
 =head2 Error Handling
 

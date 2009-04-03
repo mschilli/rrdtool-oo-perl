@@ -1,5 +1,5 @@
 
-use Test::More tests => 17;
+use Test::More tests => 18;
 use RRDTool::OO;
 use Log::Log4perl qw(:easy);
 
@@ -22,9 +22,9 @@ sub view {
 
 #Log::Log4perl->easy_init({level => $LOGLEVEL, layout => "%m%n", 
 ##                          category => 'rrdtool',
-#                          file => 'stderr',
-#                          layout => '%F{1}-%L: %m%n',
-#                         });
+#file => 'stderr',
+#layout => '%F{1}-%L: %m%n',
+#});
 
 my $rrd = RRDTool::OO->new(file => "foo");
 
@@ -582,10 +582,11 @@ PRINT:
 
       print         => {
           draw      => 'in95precent',
-          #format    => "\"%6.2lf %Sbps\"",
-          format    => "oink %6.2lf",
+          format    => "Result = %3.2lf",
         },
   );
+
+is($rrd->print_results()->[0], "Result = 5.50", "print result");
 
 unlink("foo");
 unlink("bar");

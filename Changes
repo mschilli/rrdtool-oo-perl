@@ -1,3 +1,8 @@
+0.24 (04/02/2009)
+    (ms) Added support for capturing PRINT output as suggested by
+         Peter Mistich. print_output() now returns a ref to an array
+         with the output of the last graph() command's PRINT output.
+
 0.23 (02/05/2009)
     (ms) update() now accepts DateTime objects as well (suggested by 
          Jay Buffington)
