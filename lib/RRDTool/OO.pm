@@ -47,7 +47,7 @@ our $OPTIONS = {
                                      logarithmic color no_legend only_graph
                                      force_rules_legend title step draw
                                      line area shift tick
-                                     print gprint vrule comment font
+                                     print gprint vrule hrule comment font
                                      no_gridfit font_render_mode
                                      font_smoothing_threshold slope_mode
                                      tabwidth units watermark zoom
@@ -78,6 +78,10 @@ our $OPTIONS = {
                     },
                     vrule      => {
                       mandatory => [qw(time)],
+                      optional  => [qw(color legend)],
+                    },
+                    hrule      => {
+                      mandatory => [qw(value)],
                       optional  => [qw(color legend)],
                     },
                     comment    => {
@@ -606,6 +610,7 @@ sub graph {
     my @colors = ();
     my @prints = ();
     my @vrules = ();
+    my @hrules = ();
     my @fonts  = ();
 
     my @items = ();
@@ -646,6 +651,9 @@ sub graph {
         } elsif($options[$i] eq "vrule") {
             $self->check_options("graph/vrule", [%{$options[$i+1]}]);
             push @items, ['vrule', [$options[$i], $options[$i+1]]];
+        } elsif($options[$i] eq "hrule") {
+            $self->check_options("graph/hrule", [%{$options[$i+1]}]);
+            push @items, ['hrule', [$options[$i], $options[$i+1]]];
         } elsif($options[$i] eq "tick") {
             $self->check_options("graph/tick", [%{$options[$i+1]}]);
             push @items, ['print', option_expand(@options[$i, $i+1])];
@@ -659,6 +667,7 @@ sub graph {
 
     delete $options_hash{color};
     delete $options_hash{vrule};
+    delete $options_hash{hrule};
     delete $options_hash{'print'};
     delete $options_hash{gprint};
     delete $options_hash{comment};
@@ -716,6 +725,8 @@ sub graph {
             $draw_count++;
         } elsif($item->[0] eq 'vrule') {
             $self->process_vrule($item->[1], \@options);
+        } elsif($item->[0] eq 'hrule') {
+            $self->process_hrule($item->[1], \@options);
         } elsif($item->[0] eq 'print') {
             for(@$item[1..$#$item]) {
                 $self->process_print($_, \@options, \@draws);
@@ -1060,6 +1071,20 @@ sub process_vrule {
                     $vrule->[1]->{color} .
                     ( $vrule->[1]->{legend} ?  
                          ":" . $vrule->[1]->{legend} : "");
+}
+
+###########################################
+sub process_hrule {
+###########################################
+    my($self, $hrule, $options) = @_;
+
+    # Push hrules
+    $hrule->[1]->{color} ||= "#000000";
+    push @$options, uc($hrule->[0]) . ":" .
+                    $hrule->[1]->{value} .
+                    $hrule->[1]->{color} .
+                    ( $hrule->[1]->{legend} ?  
+                         ":" . $hrule->[1]->{legend} : "");
 }
 
 ###########################################
@@ -1626,6 +1651,14 @@ an optional legend string specified:
       vrule => { time => $first_thing_today,
                  color => "#0000ff",
                  legend => "When we crossed midnight"
+               },
+
+hrules can have a color specification (they default to black) and also
+an optional legend string specified:
+
+      hrule => { value => $numeric_value,
+                 color => "#0000ff",
+                 legend => "a static line at your value"
                },
 
 Horizontal rules can be added by using a C<line> block

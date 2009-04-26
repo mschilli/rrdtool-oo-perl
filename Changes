@@ -1,3 +1,9 @@
+0.25 (04/25/2009)
+    (ms) Applied patch by Christian Dengler, adding the 'hrule' graph
+         parameter and increasing the sleep time in 002Pod.t to two
+         secs to prevent system clock inacurracies from causing
+         test failures.
+
 0.24 (04/02/2009)
     (ms) Added support for capturing PRINT output as suggested by
          Peter Mistich. print_output() now returns a ref to an array

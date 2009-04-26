@@ -24,7 +24,9 @@ my $count = 0;
     $rrd->create(
          step        => 1,  # one-second intervals
          data_source => { name      => "mydatasource",
-                          type      => "GAUGE" },
+                          type      => "GAUGE",
+                          heartbeat => 100,
+                        },
          archive     => { rows      => 5 });
 
     ok(1, "Create");
@@ -33,7 +35,7 @@ my $count = 0;
     for(1..3) {
         $rrd->update($_);
         ok(1, "Update");
-        sleep(1);
+        sleep(2);
     }
 
         # Start fetching values from one day back, 

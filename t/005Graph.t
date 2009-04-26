@@ -396,6 +396,16 @@ unlink "mygraph.png";
                 legend => "vrule2",
                 color  => "#00ff00",
       },
+      hrule       => {
+                value   => 2.5,
+                legend => "hrule1",
+                color  => "#0000ff",
+      },
+      hrule       => {
+                value   => 3.5,
+                legend => "hrule2",
+                color  => "#aa00aa",
+      },
 #      font => { name    => "/usr/X11R6/lib/X11/fonts/TTF/VeraBd.ttf",
 #                size    => 32,
 #                element => "title",
