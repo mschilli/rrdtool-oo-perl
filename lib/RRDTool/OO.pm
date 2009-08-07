@@ -143,6 +143,7 @@ my %RRDs_functions = (
     fetch     => \&RRDs::fetch,
     update    => \&RRDs::update,
     graph     => \&RRDs::graph,
+    graphv    => \&RRDs::graphv,
     info      => \&RRDs::info,
     dump      => \&RRDs::dump,
     restore   => \&RRDs::restore,
@@ -737,8 +738,10 @@ sub graph {
     push @options, @colors;
     unshift @options, $image;
 
+    my $caller = (caller(1))[3];
+    my $graphcmd = $caller eq __PACKAGE__."::graphv" ? 'graphv' : 'graph';
     my($print_results, $img_width, $img_height) = 
-        $self->RRDs_execute("graph", @options);
+        $self->RRDs_execute($graphcmd, @options);
 
     if(!defined $print_results) {
         return undef;
@@ -747,6 +750,12 @@ sub graph {
     $self->print_results( $print_results );
 
     return 1;
+}
+
+#################################################
+sub graphv {
+#################################################
+    &graph (@_);
 }
 
 ###########################################
@@ -1185,6 +1194,12 @@ RRDTool::OO - Object-oriented interface to RRDTool
           legend => "Salary over Time",
       }
     );
+
+        # Same using rrdtool's graphv
+    $rrd->graphv(
+      image          => "mygraph.png",
+      [...]
+    };
 
 =head1 DESCRIPTION
 
@@ -1699,6 +1714,13 @@ The graph may be shifted relative to the time axis:
         offset  => $offset,
     }
 
+=item I<$rrd-E<gt>graphv( ... )>
+
+This is identical to C<graph>, but uses rrdtool's graphv function internally.
+The only difference is when using the C<print_results> method described below, which
+then contains additional information.
+Be aware that rrdtool 1.3 is required for C<graphv> to work.
+
 =item I<$rrd-E<gt>dump()>
 
 I<Available as of rrdtool 1.0.49>.
@@ -1888,6 +1910,49 @@ containing the different pieces of data written in this way, call
 
 If no print output is available, the array referenced by C<$array_ref>
 is empty.
+
+If the C<graphv> function is used instead of C<graph>, the return value of
+print_results is a hashref containing the same information in the C<print> keys,
+along with additional keys containing detailed information on the graph. See C<rrdtool>
+documentation for more detail. Here is an example: 
+
+    use Data::Dumper;
+
+    $rrd -> graphv (
+      image          => "-",
+      start          => $start_time,
+
+      # ...
+
+    my $hash_ref = $rrd->print_results();
+
+    print Dumper $hash_ref;
+    $VAR1 = {
+          'print[2]' => '1600.00',
+          'value_min' => '200',
+          'image_height' => 64,
+          'graph_height' => 10,
+          'print[1]' => '3010.18',
+          'graph_end' => 1249391462,
+          'print[3]' => '1600.00',
+          'graph_left' => 51,
+          'print[4]' => '2337.29',
+          'print[0]' => '305.13',
+          'value_max' => '10000',
+          'graph_width' => 10,
+          'image_width' => 91,
+          'graph_top' => 22,
+          'image' => '#PNG
+                     [...lots of binary rubbish your terminal won't like...]
+                     ',
+          'graph_start' => 1217855462
+        };
+
+In this case, the option (image => "-") has been used to create the hash key
+with the same name, the value of which actually contains the BLOB of the image itself.
+This is useful when image needs to be passed to other modules (e.g. Image::Magick),
+instead of writing it to disk.
+Be aware that rrdtool 1.3 is required for C<graphv> to work.
 
 =head2 Error Handling
 
