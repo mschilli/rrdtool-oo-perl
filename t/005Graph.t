@@ -1,5 +1,5 @@
 
-use Test::More tests => 18;
+use Test::More tests => 20;
 use RRDTool::OO;
 use Log::Log4perl qw(:easy);
 
@@ -11,13 +11,14 @@ $SIG{__WARN__} = sub {
 ##############################################
 # Configuration
 ##############################################
-my $VIEW     = 0;     # Display graphs
+my $VIEW = 0;     # Display graphs
+my $VIEWPROG = "xv"; # using viewprog
 my $LOGLEVEL = $INFO;  # Level of detail
 ##############################################
 
 sub view {
     return unless $VIEW;
-    system("xv $_[0]");
+    system($VIEWPROG, $_[0]) if ( -x $VIEWPROG );
 }
 
 #Log::Log4perl->easy_init({level => $LOGLEVEL, layout => "%m%n", 
@@ -574,7 +575,7 @@ PRINT:
       },
     );
 
-    $rrd->graph(
+		my @prgraph = (
       image          => "mygraph.png",
       start          => $start_time,
       end            => $start_time + $nof_iterations * 60,
@@ -594,9 +595,28 @@ PRINT:
           draw      => 'in95precent',
           format    => "Result = %3.2lf",
         },
-  );
+		);
+    $rrd->graph(
+			@prgraph,
+    );
 
 is($rrd->print_results()->[0], "Result = 5.50", "print result");
+
+######################################################################
+# Draw simple graphv
+######################################################################
+SKIP: {
+	eval "use RRDs 1.3";
+	skip "RRDs is too old: need 1.3 for graphv", 2 if $@;
+        # Simple line graph
+    $rrd->graphv(
+			@prgraph,
+    );
+
+	ok(-f "mygraph.png", "Image exists");
+	unlink "mygraph.png";
+	is($rrd->print_results()->{'print[0]'}, "Result = 5.50", "print result");
+}
 
 unlink("foo");
 unlink("bar");

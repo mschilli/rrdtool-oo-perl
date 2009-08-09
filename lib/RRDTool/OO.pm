@@ -738,7 +738,7 @@ sub graph {
     push @options, @colors;
     unshift @options, $image;
 
-    my $caller = (caller(1))[3];
+    my $caller = (caller(1))[3] ? (caller(1))[3] : '';
     my $graphcmd = $caller eq __PACKAGE__."::graphv" ? 'graphv' : 'graph';
     my($print_results, $img_width, $img_height) = 
         $self->RRDs_execute($graphcmd, @options);
