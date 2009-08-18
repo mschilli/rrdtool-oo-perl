@@ -3,10 +3,8 @@ use ExtUtils::MakeMaker;
 use File::Basename;
 
 # Check if RRDs is installed
-my $v = rrdtool_version();
-#print "v=$v\n";
 
-eval { require RRDs; };
+eval "use RRDs 1.2011";
 
     # (1) libcgi is missing on most Linux/FreeBSD systems, and we
     #     don't need it anyway.
@@ -17,7 +15,7 @@ my $CONFIGURE_OPTS = "--enable-perl-site-install --prefix=/usr --disable-tcl --d
 my $DIST_URL = 
 "http://oss.oetiker.ch/rrdtool/pub/rrdtool.tar.gz";
 
-if($@ or !$v or $v < 1.002011) {
+if($@) {
     print <<EOT;
 This module requires rrdtool 1.2.x and the RRDs module to be 
 installed. They are available in the rrdtool distribution:
