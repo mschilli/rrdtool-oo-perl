@@ -85,31 +85,3 @@ sub note {
     print "################################################\n";
 }
 
-##################################################################
-sub rrdtool_version {
-##################################################################
-
-    my @paths = split /:/, $ENV{PATH};
-    push @paths, qw(/usr/bin /usr/local/bin);
-
-    my $path;
-
-    for(@paths) {
-        if(-x "$_/rrdtool") {
-            $path = "$_/rrdtool";
-            last;
-        }
-    }
-
-    return undef unless $path;
-
-    open PIPE, "$path --version |" or die "Cannot run $path";
-    my $data = join '', <PIPE>;
-    close PIPE;
-
-    if($data =~ /RRDtool (\d+)\.(\d+)\.(\d+)/) {
-        return $1 + $2/1000.0 + $3/1000000.0;
-    }
-
-    return undef;
-}
