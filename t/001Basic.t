@@ -1,6 +1,7 @@
 
 use Test::More qw(no_plan);
 use RRDTool::OO;
+use POSIX qw(setlocale LC_ALL);
 
 use Log::Log4perl qw(:easy);
 #Log::Log4perl->easy_init({level => $INFO, layout => "%L: %m%n", 
@@ -8,6 +9,7 @@ use Log::Log4perl qw(:easy);
 #                          file => 'stdout'});
 
 my $rrd;
+my $loc = setlocale( LC_ALL, "C" );
 
 ######################################################################
     # constructor missing mandatory parameter
