@@ -4,7 +4,7 @@ use File::Basename;
 
 # Check if RRDs is installed
 
-eval "use RRDs 1.2011";
+eval "use RRDs 1.82011";
 
     # (1) libcgi is missing on most Linux/FreeBSD systems, and we
     #     don't need it anyway.
@@ -23,8 +23,7 @@ installed. They are available in the rrdtool distribution:
 EOT
 
     $| = 1;
-    print "Do you want me to install it for you right now ([y]/n)?";
-    my $in = <>;
+    my $in = prompt ("Do you want me to install it for you right now (y/n)?","n");
     chomp $in;
     if($in =~ /^\s*$/ or $in =~ /y/i) {
         if($> != 0) {
