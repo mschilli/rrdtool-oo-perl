@@ -4,7 +4,7 @@ use File::Basename;
 
 # Check if RRDs is installed
 
-eval "use RRDs 1.82011";
+eval "use RRDs 1.2011";
 
     # (1) libcgi is missing on most Linux/FreeBSD systems, and we
     #     don't need it anyway.
