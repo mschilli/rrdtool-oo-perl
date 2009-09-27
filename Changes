@@ -1,3 +1,13 @@
+0.26 (09/27/2009)
+    (ms) [RT 32601] Using prompt() instead of manually asking for input 
+         in Makefile.PL (by Fabien Wernli)
+    (ms) [RT 32046] Calling setlocale() to fix error message check in 
+         foreign locales (by Fabien Wernli)
+    (ms) Implemented graphv method. This works just like graph() but uses 
+         rrdtool's graphv internally, giving access to additional 
+         information using print_results() method (by Fabien Wernli)
+    (ms) Improved RRDs version testing (by Fabien Wernli).
+
 0.25 (04/25/2009)
     (ms) Applied patch by Christian Dengler, adding the 'hrule' graph
          parameter and increasing the sleep time in 002Pod.t to two
