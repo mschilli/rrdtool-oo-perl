@@ -1,5 +1,5 @@
 ######################################################################
-    RRDTool::OO 0.24
+    RRDTool::OO 0.26
 ######################################################################
 
 NAME
@@ -47,6 +47,12 @@ SYNOPSIS
               legend => "Salary over Time",
           }
         );
+
+            # Same using rrdtool's graphv
+        $rrd->graphv(
+          image          => "mygraph.png",
+          [...]
+        };
 
 DESCRIPTION
     "RRDTool::OO" is an object-oriented interface to Tobi Oetiker's round
@@ -467,6 +473,14 @@ DESCRIPTION
                          legend => "When we crossed midnight"
                        },
 
+        hrules can have a color specification (they default to black) and
+        also an optional legend string specified:
+
+              hrule => { value => $numeric_value,
+                         color => "#0000ff",
+                         legend => "a static line at your value"
+                       },
+
         Horizontal rules can be added by using a "line" block like in
 
             line => { 
@@ -503,6 +517,12 @@ DESCRIPTION
                 draw    => "drawname",
                 offset  => $offset,
             }
+
+    *$rrd->graphv( ... )*
+        This is identical to "graph", but uses rrdtool's graphv function
+        internally. The only difference is when using the "print_results"
+        method described below, which then contains additional information.
+        Be aware that rrdtool 1.3 is required for "graphv" to work.
 
     *$rrd->dump()*
         *Available as of rrdtool 1.0.49*.
@@ -683,6 +703,50 @@ DESCRIPTION
 
     If no print output is available, the array referenced by $array_ref is
     empty.
+
+    If the "graphv" function is used instead of "graph", the return value of
+    print_results is a hashref containing the same information in the
+    "print" keys, along with additional keys containing detailed information
+    on the graph. See "rrdtool" documentation for more detail. Here is an
+    example:
+
+        use Data::Dumper;
+
+        $rrd -> graphv (
+          image          => "-",
+          start          => $start_time,
+
+          # ...
+
+        my $hash_ref = $rrd->print_results();
+
+        print Dumper $hash_ref;
+        $VAR1 = {
+              'print[2]' => '1600.00',
+              'value_min' => '200',
+              'image_height' => 64,
+              'graph_height' => 10,
+              'print[1]' => '3010.18',
+              'graph_end' => 1249391462,
+              'print[3]' => '1600.00',
+              'graph_left' => 51,
+              'print[4]' => '2337.29',
+              'print[0]' => '305.13',
+              'value_max' => '10000',
+              'graph_width' => 10,
+              'image_width' => 91,
+              'graph_top' => 22,
+              'image' => '#PNG
+                         [...lots of binary rubbish your terminal won't like...]
+                         ',
+              'graph_start' => 1217855462
+            };
+
+    In this case, the option (image => "-") has been used to create the hash
+    key with the same name, the value of which actually contains the BLOB of
+    the image itself. This is useful when image needs to be passed to other
+    modules (e.g. Image::Magick), instead of writing it to disk. Be aware
+    that rrdtool 1.3 is required for "graphv" to work.
 
   Error Handling
     By default, "RRDTool::OO"'s methods will throw fatal errors (as in:
