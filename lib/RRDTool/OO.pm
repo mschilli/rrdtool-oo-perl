@@ -1686,7 +1686,7 @@ like in
         width   => 120,
         stack   => 1,
     }
-        
+
 If instead of a horizontal line, a rectangular area is supposed to
 be added to the graph, use an C<area> block:
 
@@ -1786,6 +1786,8 @@ Alter a RRD's data source configuration values:
 Return the message of the last error that occurred while interacting
 with C<RRDTool::OO>.
 
+=back
+
 =head2 Aberrant behavior detection
 
 RRDTool supports aberrant behavior detection (ABD), which takes a data
@@ -1869,8 +1871,6 @@ The C<rra-num> argument is an internal index referencing other
 RRAs (for example, HWPREDICT references SEASONAL), but this will 
 be taken care of automatically by RRDTool::OO with no user
 interaction required whatsoever.
-
-=back
 
 =head2 Development Status
 
