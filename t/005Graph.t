@@ -87,7 +87,8 @@ for(0..$nof_iterations) {
     });
 }
 
-$rrd->fetch_start(start => $start_time, cfunc => 'MAX');
+$rrd->fetch_start(start => $start_time, end => $end_time,
+                  cfunc => 'MAX');
 $rrd->fetch_skip_undef();
 while(my($time, $val1, $val2) = $rrd->fetch_next()) {
     last unless defined $val1;
@@ -132,7 +133,8 @@ for(0..$nof_iterations) {
     });
 }
 
-$rrd2->fetch_start(start => $start_time, cfunc => 'AVERAGE');
+$rrd2->fetch_start(start => $start_time, end => $end_time,
+                   cfunc => 'AVERAGE');
 $rrd2->fetch_skip_undef();
 while(my($time, $val1) = $rrd2->fetch_next()) {
     last unless defined $val1;

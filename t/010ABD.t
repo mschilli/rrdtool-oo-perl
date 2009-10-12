@@ -111,7 +111,8 @@ sub count_failures {
 ###########################################
     my($rrd, $start_time) = @_;
 
-    $rrd->fetch_start(start => $start_time, cfunc => "FAILURES");
+    $rrd->fetch_start(start => $start_time, end => $end_time + 3600,
+                      cfunc => "FAILURES");
     $rrd->fetch_skip_undef();
     my $count = 0;
     while(my($time, $val) = $rrd->fetch_next()) {
