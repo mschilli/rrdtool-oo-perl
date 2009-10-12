@@ -61,7 +61,8 @@ my @expected_val1 = qw(1080462360:5.6 1080462420:5.7 1080462480:5.8
 my @expected_val2 = qw(1080462360:15.6 1080462420:15.7 1080462480:15.8
                        1080462540:15.9 1080462600:16);
 
-$rrd->fetch_start(start => $end_time - 5*60, cfunc => 'MAX');
+$rrd->fetch_start(start => $end_time - 5*60, end => $end_time,
+                  cfunc => 'MAX');
 $rrd->fetch_skip_undef();
 my $count = 0;
 while(my($time, $val1, $val2) = $rrd->fetch_next()) {
