@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.26';
+our $VERSION = '0.28';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -56,7 +56,7 @@ our $OPTIONS = {
                       mandatory => [qw()],
                       optional  => [qw(file dsname cfunc thickness 
                                        type color legend name cdef vdef
-                                       stack
+                                       stack step start end
                                       )],
                     },
                     color     => {
@@ -1041,10 +1041,10 @@ sub process_draw {
                                      $options_hash->{cfunc};
 
             # Create the draw strings
-            #DEF:myload=$DB:load:MAX
-            push @$options, "DEF:$p->{name}=$p->{file}:" .
-                           "$p->{dsname}:" .
-                           "$p->{cfunc}";
+            # DEF:vname=rrdfile:ds-name:CF[:step=step][:start=time][:end=time]
+            my $def = "DEF:$p->{name}=$p->{file}:$p->{dsname}:$p->{cfunc}";
+            map { $def .= ":$_=$p->{$_}" } grep { defined $p->{$_} } qw(step start end);
+            push @$options, $def;
         }
 
             #LINE2:myload#FF0000
@@ -2146,7 +2146,7 @@ Mike Schilli, E<lt>m@perlmeister.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2004-2008 by Mike Schilli
+Copyright (C) 2004-2009 by Mike Schilli
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.3 or,
