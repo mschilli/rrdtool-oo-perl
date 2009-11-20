@@ -2,6 +2,14 @@ use 5.006;
 use ExtUtils::MakeMaker;
 use File::Basename;
 
+my $meta_merge = {
+    META_MERGE => {
+        resources => {
+            repository  => 'http://github.com/mschilli/rrdtool-oo-perl',
+        },
+    }
+};
+
 # Check if RRDs is installed
 
 eval "use RRDs 1.2011";
@@ -50,6 +58,7 @@ WriteMakefile(
                          Log::Log4perl => '0.40',
                          RRDs          => 0,
                          }, # e.g., Module::Name => 1.1
+    $ExtUtils::MakeMaker::VERSION >= 6.50 ? (%$meta_merge) : (),
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/RRDTool/OO.pm', # retrieve abstract from module
        AUTHOR         => 'Mike Schilli <m@perlmeister.com>') : ()),

@@ -1,3 +1,6 @@
+0.29  (not yet released)
+    (ms) Added github repository link to Makefile.PL
+
 0.28 (11/05/2009)
     (ms) Applied patch by Lyle Brooks, adding optional step, start, and
          end parameters to "draw".
