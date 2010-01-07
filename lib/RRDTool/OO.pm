@@ -1395,6 +1395,16 @@ Gets the next row from the RRD iterator, initialized by a previous call
 to C<$rrd-E<gt>fetch_start()>. Returns the time of the archive point
 along with all values as a list.
 
+Note that there might be more than one value coming back from C<fetch_next>
+if the RRA defines more than one datasource):
+
+    I<($time, @values_of_all_ds) = $rrd-E<gt>fetch_next()>
+
+It is not possible to fetch only a specific datasource, as rrdtool 
+doesn't provide this.
+
+=item I<($time, $value, ...) = $rrd-E<gt>fetch_next()>
+
 =item I<$rrd-E<gt>graph( ... )>
 
 If there's only one data source in the RRD, drawing a nice graph in
