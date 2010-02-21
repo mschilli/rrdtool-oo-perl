@@ -1,6 +1,7 @@
-0.29  (not yet released)
+0.29  (02/20/2010)
     (ms) Added github repository link to Makefile.PL
     (ms) Fixed documentation for fetch_next().
+    (ms) [RT 54544] Tom Regner added support for updatev().
 
 0.28 (11/05/2009)
     (ms) Applied patch by Lyle Brooks, adding optional step, start, and

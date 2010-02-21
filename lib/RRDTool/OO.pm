@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.28';
+our $VERSION = '0.29';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -142,6 +142,7 @@ my %RRDs_functions = (
     create    => \&RRDs::create,
     fetch     => \&RRDs::fetch,
     update    => \&RRDs::update,
+    updatev   => \&RRDs::updatev,
     graph     => \&RRDs::graph,
     graphv    => \&RRDs::graphv,
     info      => \&RRDs::info,
@@ -480,8 +481,25 @@ sub update {
         $update_string .= $options_hash{value};
     }
 
-    $self->RRDs_execute("update", $self->{file}, 
-                        @update_options, $update_string);
+    my $caller = (caller(1))[3] ? (caller(1))[3] : '';
+    my $updatecmd = $caller eq __PACKAGE__."::updatev" ? 'updatev' : 'update';
+    my ($print_results) = 
+        $self->RRDs_execute($updatecmd, $self->{file},
+                            @update_options, $update_string);
+
+    if(!defined $print_results) {
+        return undef;
+    }
+
+    $self->print_results( $print_results );
+
+    return 1;
+}
+
+#################################################
+sub updatev {
+#################################################
+    &update (@_);
 }
 
 #################################################
@@ -1340,6 +1358,12 @@ names to values:
 
 C<RRDTool::OO> will transform this automagically
 into C<RRDTool's> I<template> syntax.
+
+=item I<$rrd-E<gt>updatev( ... )>
+
+This is identical to C<update>, but uses rrdtool's updatev function internally.
+The only difference is when using the C<print_results> method described 
+below, which then contains additional information.
 
 =item I<$rrd-E<gt>fetch_start( ... )>
 
