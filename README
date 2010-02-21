@@ -1,5 +1,5 @@
 ######################################################################
-    RRDTool::OO 0.28
+    RRDTool::OO 0.29
 ######################################################################
 
 NAME
@@ -181,6 +181,11 @@ DESCRIPTION
         "RRDTool::OO" will transform this automagically into "RRDTool's"
         *template* syntax.
 
+    *$rrd->updatev( ... )*
+        This is identical to "update", but uses rrdtool's updatev function
+        internally. The only difference is when using the "print_results"
+        method described below, which then contains additional information.
+
     *$rrd->fetch_start( ... )*
         Initializes the iterator to fetch data from the RRD. This works
         nicely without any parameters if your archives are using a single
@@ -229,6 +234,15 @@ DESCRIPTION
         call to "$rrd->fetch_start()". Returns the time of the archive point
         along with all values as a list.
 
+        Note that there might be more than one value coming back from
+        "fetch_next" if the RRA defines more than one datasource):
+
+            I<($time, @values_of_all_ds) = $rrd-E<gt>fetch_next()>
+
+        It is not possible to fetch only a specific datasource, as rrdtool
+        doesn't provide this.
+
+    *($time, $value, ...) = $rrd->fetch_next()*
     *$rrd->graph( ... )*
         If there's only one data source in the RRD, drawing a nice graph in
         an image file on disk is as easy as
