@@ -1,3 +1,7 @@
+0.30  (02/21/2010)
+    (ms) [RT 53961] Worked around rrdtool-1.3.5 inaccuracy problem by
+         skipping certain tests for rrdtool <= 1.4.
+
 0.29  (02/20/2010)
     (ms) Added github repository link to Makefile.PL
     (ms) Fixed documentation for fetch_next().

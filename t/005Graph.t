@@ -602,22 +602,28 @@ PRINT:
 			@prgraph,
     );
 
-is($rrd->print_results()->[0], "Result = 5.50", "print result");
+
+SKIP: {
+    skip "Skipping potentially buggy RRDs < 1.4 for print/format", 1 if 
+        $RRDs::VERSION < 1.4;
+    is($rrd->print_results()->[0], "Result = 6.00", "print result");
+}
 
 ######################################################################
 # Draw simple graphv
 ######################################################################
 SKIP: {
-	eval "use RRDs 1.3";
-	skip "RRDs is too old: need 1.3 for graphv", 2 if $@;
-        # Simple line graph
-    $rrd->graphv(
-			@prgraph,
-    );
+    eval "use RRDs 1.3";
+    skip "RRDs is too old: need 1.3 for graphv", 2 if $@;
 
-	ok(-f "mygraph.png", "Image exists");
-	unlink "mygraph.png";
-	is($rrd->print_results()->{'print[0]'}, "Result = 5.50", "print result");
+        # Simple line graph
+    $rrd->graphv( @prgraph );
+
+    ok(-f "mygraph.png", "Image exists");
+    unlink "mygraph.png";
+    skip "Skipping potentially buggy RRDs < 1.4 for print/format", 1 if 
+       $RRDs::VERSION < 1.4;
+    is($rrd->print_results()->{'print[0]'}, "Result = 6.00", "print result");
 }
 
 unlink("foo");

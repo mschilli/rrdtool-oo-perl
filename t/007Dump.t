@@ -65,7 +65,7 @@ unlink "foo";
 # Restore it.
 #####################################################
 $rrd->restore("out");
-is(-s "foo", $size, "RRD same size");
+ok(-f "foo", "RRD resurrected");
 
 END { unlink "foo"; 
       unlink "out";
