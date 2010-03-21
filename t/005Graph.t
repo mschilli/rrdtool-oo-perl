@@ -87,7 +87,8 @@ for(0..$nof_iterations) {
     });
 }
 
-$rrd->fetch_start(start => $start_time, cfunc => 'MAX');
+$rrd->fetch_start(start => $start_time, end => $end_time,
+                  cfunc => 'MAX');
 $rrd->fetch_skip_undef();
 while(my($time, $val1, $val2) = $rrd->fetch_next()) {
     last unless defined $val1;
@@ -132,7 +133,8 @@ for(0..$nof_iterations) {
     });
 }
 
-$rrd2->fetch_start(start => $start_time, cfunc => 'AVERAGE');
+$rrd2->fetch_start(start => $start_time, end => $end_time,
+                   cfunc => 'AVERAGE');
 $rrd2->fetch_skip_undef();
 while(my($time, $val1) = $rrd2->fetch_next()) {
     last unless defined $val1;
@@ -600,22 +602,28 @@ PRINT:
 			@prgraph,
     );
 
-is($rrd->print_results()->[0], "Result = 5.50", "print result");
+
+SKIP: {
+    skip "Skipping potentially buggy RRDs < 1.4 for print/format", 1 if 
+        $RRDs::VERSION < 1.4;
+    is($rrd->print_results()->[0], "Result = 6.00", "print result");
+}
 
 ######################################################################
 # Draw simple graphv
 ######################################################################
 SKIP: {
-	eval "use RRDs 1.3";
-	skip "RRDs is too old: need 1.3 for graphv", 2 if $@;
-        # Simple line graph
-    $rrd->graphv(
-			@prgraph,
-    );
+    eval "use RRDs 1.3";
+    skip "RRDs is too old: need 1.3 for graphv", 2 if $@;
 
-	ok(-f "mygraph.png", "Image exists");
-	unlink "mygraph.png";
-	is($rrd->print_results()->{'print[0]'}, "Result = 5.50", "print result");
+        # Simple line graph
+    $rrd->graphv( @prgraph );
+
+    ok(-f "mygraph.png", "Image exists");
+    unlink "mygraph.png";
+    skip "Skipping potentially buggy RRDs < 1.4 for print/format", 1 if 
+       $RRDs::VERSION < 1.4;
+    is($rrd->print_results()->{'print[0]'}, "Result = 6.00", "print result");
 }
 
 unlink("foo");

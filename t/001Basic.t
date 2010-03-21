@@ -97,7 +97,8 @@ for(0..$nof_iterations) {
 my @expected = qw(1080462360:5.6 1080462420:5.7 1080462480:5.8
                   1080462540:5.9 1080462600:6);
 
-$rrd->fetch_start(start => $end_time - 5*60, cfunc => 'MAX');
+$rrd->fetch_start(start => $end_time - 5*60, end => $end_time,
+                  cfunc => 'MAX');
 $rrd->fetch_skip_undef();
 my $count = 0;
 while(my($time, $val) = $rrd->fetch_next()) {
@@ -110,7 +111,8 @@ is($count, 5, "items found");
     # long-term archive
 @expected = qw(1080461100:3.5 1080461400:4 1080461700:4.5 1080462000:5 1080462300:5.5 1080462600:6);
 
-$rrd->fetch_start(start => $end_time - 30*60, cfunc => 'MAX');
+$rrd->fetch_start(start => $end_time - 30*60, end => $end_time,
+                  cfunc => 'MAX');
 $rrd->fetch_skip_undef();
 $count = 0;
 while(my($time, $val) = $rrd->fetch_next()) {

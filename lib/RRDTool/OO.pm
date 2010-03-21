@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.26';
+our $VERSION = '0.30';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -56,7 +56,7 @@ our $OPTIONS = {
                       mandatory => [qw()],
                       optional  => [qw(file dsname cfunc thickness 
                                        type color legend name cdef vdef
-                                       stack
+                                       stack step start end
                                       )],
                     },
                     color     => {
@@ -142,6 +142,7 @@ my %RRDs_functions = (
     create    => \&RRDs::create,
     fetch     => \&RRDs::fetch,
     update    => \&RRDs::update,
+    updatev   => \&RRDs::updatev,
     graph     => \&RRDs::graph,
     graphv    => \&RRDs::graphv,
     info      => \&RRDs::info,
@@ -480,8 +481,25 @@ sub update {
         $update_string .= $options_hash{value};
     }
 
-    $self->RRDs_execute("update", $self->{file}, 
-                        @update_options, $update_string);
+    my $caller = (caller(1))[3] ? (caller(1))[3] : '';
+    my $updatecmd = $caller eq __PACKAGE__."::updatev" ? 'updatev' : 'update';
+    my ($print_results) = 
+        $self->RRDs_execute($updatecmd, $self->{file},
+                            @update_options, $update_string);
+
+    if(!defined $print_results) {
+        return undef;
+    }
+
+    $self->print_results( $print_results );
+
+    return 1;
+}
+
+#################################################
+sub updatev {
+#################################################
+    &update (@_);
 }
 
 #################################################
@@ -1041,10 +1059,10 @@ sub process_draw {
                                      $options_hash->{cfunc};
 
             # Create the draw strings
-            #DEF:myload=$DB:load:MAX
-            push @$options, "DEF:$p->{name}=$p->{file}:" .
-                           "$p->{dsname}:" .
-                           "$p->{cfunc}";
+            # DEF:vname=rrdfile:ds-name:CF[:step=step][:start=time][:end=time]
+            my $def = "DEF:$p->{name}=$p->{file}:$p->{dsname}:$p->{cfunc}";
+            map { $def .= ":$_=$p->{$_}" } grep { defined $p->{$_} } qw(step start end);
+            push @$options, $def;
         }
 
             #LINE2:myload#FF0000
@@ -1269,7 +1287,7 @@ If you want
 to combine several primary data points into one archive point, specify
 values for 
 C<cpoints> (the number of points to combine) and C<cfunc> 
-(the consolidation function) explicitely:
+(the consolidation function) explicitly:
 
     $rrd->create(
          step        => 60,
@@ -1341,6 +1359,12 @@ names to values:
 C<RRDTool::OO> will transform this automagically
 into C<RRDTool's> I<template> syntax.
 
+=item I<$rrd-E<gt>updatev( ... )>
+
+This is identical to C<update>, but uses rrdtool's updatev function internally.
+The only difference is when using the C<print_results> method described 
+below, which then contains additional information.
+
 =item I<$rrd-E<gt>fetch_start( ... )>
 
 Initializes the iterator to fetch data from the RRD. This works nicely without
@@ -1395,6 +1419,16 @@ Gets the next row from the RRD iterator, initialized by a previous call
 to C<$rrd-E<gt>fetch_start()>. Returns the time of the archive point
 along with all values as a list.
 
+Note that there might be more than one value coming back from C<fetch_next>
+if the RRA defines more than one datasource):
+
+    I<($time, @values_of_all_ds) = $rrd-E<gt>fetch_next()>
+
+It is not possible to fetch only a specific datasource, as rrdtool 
+doesn't provide this.
+
+=item I<($time, $value, ...) = $rrd-E<gt>fetch_next()>
+
 =item I<$rrd-E<gt>graph( ... )>
 
 If there's only one data source in the RRD, drawing a nice graph in
@@ -1410,7 +1444,7 @@ an image file on disk is as easy as
     );
 
 This will assume a start time of 24 hours before now and an
-end time of now. Specify C<start> and C<end> explicitely to
+end time of now. Specify C<start> and C<end> explicitly to
 be clear:
 
     $rrd->graph(
@@ -1428,7 +1462,7 @@ As always, C<RRDTool::OO> will pick reasonable defaults for parameters
 not specified. The values for data source and consolidation function
 default to the first values it finds in the RRD.
 If there are multiple datasources in the RRD or multiple archives
-with different values for C<cfunc>, just specify explicitely which
+with different values for C<cfunc>, just specify explicitly which
 one to draw:
 
     $rrd->graph(
@@ -1983,7 +2017,7 @@ what's going on under the hood, just turn it on:
         level    => $DEBUG
     }); 
 
-If you're interested particularily in I<rrdtool> commands issued
+If you're interested particularly in I<rrdtool> commands issued
 by C<RRDTool::OO> while you're operating it, just enable the
 category C<"rrdtool">:
 
@@ -2146,7 +2180,7 @@ Mike Schilli, E<lt>m@perlmeister.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2004-2008 by Mike Schilli
+Copyright (C) 2004-2009 by Mike Schilli
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.3 or,
