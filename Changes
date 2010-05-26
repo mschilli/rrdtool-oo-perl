@@ -1,3 +1,9 @@
+0.31  (not yet released)
+    (ms) [rt.cpan.org #54870] Fixed typos/pod errors reported by
+         Salvatore Bonaccorso.
+    (ms) Fixed overwriting input parameters in create(), bug reported
+         by Erik Wasser.
+
 0.30  (02/21/2010)
     (ms) [RT 53961] Worked around rrdtool-1.3.5 inaccuracy problem by
          skipping certain tests for rrdtool <= 1.4.
