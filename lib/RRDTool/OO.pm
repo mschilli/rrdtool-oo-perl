@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.30';
+our $VERSION = '0.31';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -279,9 +279,11 @@ sub create {
     my @hwpredict;
 
     for(my $i=0; $i < @options; $i += 2) {
-        push @archives, $options[$i+1] if $options[$i] eq "archive";
-        push @hwpredict, $options[$i+1] if $options[$i] eq "hwpredict";
-        push @data_sources, $options[$i+1] if $options[$i] eq "data_source";
+          # Push copies (!) of original hashes onto internal data structures
+        push @archives, { %{$options[$i+1]} } if $options[$i] eq "archive";
+        push @hwpredict, { %{$options[$i+1]} } if $options[$i] eq "hwpredict";
+        push @data_sources, 
+            { %{$options[$i+1]} } if $options[$i] eq "data_source";
     }
 
     if(!@archives and !@hwpredict) {
