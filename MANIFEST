@@ -4,9 +4,9 @@ eg/dt
 eg/graph.pl
 lib/RRDTool/OO.pm
 Makefile.PL
-MANIFEST
+MANIFEST			This list of files
 MANIFEST.SKIP
-META.yml			Module meta-data (added by MakeMaker)
+META.yml
 README
 t/001Basic.t
 t/002Pod.t
@@ -18,3 +18,4 @@ t/007Dump.t
 t/008Mult.t
 t/009Dry.t
 t/010ABD.t
+t/011Bugs.t

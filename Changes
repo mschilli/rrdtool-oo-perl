@@ -1,4 +1,4 @@
-0.31  (not yet released)
+0.31  (05/26/2010)
     (ms) [rt.cpan.org #54870] Fixed typos/pod errors reported by
          Salvatore Bonaccorso.
     (ms) Fixed overwriting input parameters in create(), bug reported
