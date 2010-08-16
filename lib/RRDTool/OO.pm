@@ -1881,7 +1881,7 @@ consolidate the data from a data source before stuffing it into
 the HWPREDICT RRAs, as the whole point of ABD is to smooth unfiltered
 data and predict future values.
 
-A violation happen if a new measured value falls outside of the
+A violation happens if a new measured value falls outside of the
 prediction. If C<threshold> or more violations happen within
 C<window_length>, an error is reported to the FAILURES RRA.
 C<threshold> defaults to 7, C<window_length> to 9.
