@@ -1,3 +1,7 @@
+0.32  (not yet released)
+    (ms) [rt.cpan.org #63351] Applied modified patch by Jonas Wagner to
+         fix stacked graphs with no legend.
+
 0.31  (05/26/2010)
     (ms) [rt.cpan.org #54870] Fixed typos/pod errors reported by
          Salvatore Bonaccorso.

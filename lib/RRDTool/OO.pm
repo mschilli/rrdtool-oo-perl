@@ -7,7 +7,7 @@ use Carp;
 use RRDs;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.31';
+our $VERSION = '0.32';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -1071,7 +1071,13 @@ sub process_draw {
         $p->{type} ||= 'line';
 
         my $draw_attributes = ":$p->{name}#$p->{color}";
-        $draw_attributes .= ":$p->{legend}" if length $p->{legend};
+
+        if( length $p->{legend} ) {
+            $draw_attributes .= ":$p->{legend}";
+        } elsif( exists $p->{stack} ) {
+            $draw_attributes .= ":";
+        }
+
         $draw_attributes .= ":STACK" if exists $p->{stack};
 
         if($p->{type} eq "hidden") {
@@ -1081,6 +1087,9 @@ sub process_draw {
         } elsif($p->{type} eq "area") {
             push @$options, "AREA$draw_attributes";
         } elsif($p->{type} eq "stack") {
+            if( ! length $p->{legend} ) {
+                $draw_attributes .= ":";
+            }
               # modified for backwards compatibility
             push @$options, "AREA$draw_attributes:STACK";
         } else {
