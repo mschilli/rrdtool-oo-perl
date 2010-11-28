@@ -377,8 +377,9 @@ DESCRIPTION
         "alt_y_grid", "no_minor", "alt_y_mrtg", "alt_autoscale",
         "alt_autoscale_max", "base", "units_exponent", "units_length",
         "width", "height", "interlaced", "imginfo", "imgformat", "overlay",
-        "unit", "lazy", "rigid", "upper_limit", "logarithmic", "color",
-        "no_legend", "only_graph", "force_rules_legend", "title", "step".
+        "unit", "lazy", "rigid", "lower_limit", "upper_limit",
+        "logarithmic", "color", "no_legend", "only_graph",
+        "force_rules_legend", "title", "step".
 
         Some options (e.g. "alt_y_grid") don't expect values, they need to
         be specified like
@@ -504,7 +505,7 @@ DESCRIPTION
                 width   => 120,
                 stack   => 1,
             }
-        
+
         If instead of a horizontal line, a rectangular area is supposed to
         be added to the graph, use an "area" block:
 
@@ -644,7 +645,7 @@ DESCRIPTION
     HWPREDICT RRAs, as the whole point of ABD is to smooth unfiltered data
     and predict future values.
 
-    A violation happen if a new measured value falls outside of the
+    A violation happens if a new measured value falls outside of the
     prediction. If "threshold" or more violations happen within
     "window_length", an error is reported to the FAILURES RRA. "threshold"
     defaults to 7, "window_length" to 9.
@@ -787,7 +788,7 @@ DESCRIPTION
 
         Log::Log4perl->easy_init({
             level    => $DEBUG
-        }); 
+        });
 
     If you're interested particularly in *rrdtool* commands issued by
     "RRDTool::OO" while you're operating it, just enable the category
@@ -797,7 +798,7 @@ DESCRIPTION
             level    => $INFO, 
             category => 'rrdtool',
             layout   => '%m%n',
-        }); 
+        });
 
     This will display all "rrdtool" commands that "RRDTool::OO" submits to
     the shared library. Let's turn it on for the code snippet in the
@@ -839,7 +840,7 @@ DESCRIPTION
         my $rrd = RRDTool::OO->new(
             strict => 0,
             file   => "myrrdfile.rrd",
-        ); 
+        );
 
     Note that "RRDTool::OO" follows the convention that parameters names do
     not contain dashes, but underscores instead. So, you need to say
