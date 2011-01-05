@@ -104,6 +104,16 @@ our $OPTIONS = {
                       mandatory => [qw(offset)],
                       optional  => [qw(draw)],
                     },
+                 },
+     xport      => { mandatory => [qw()],
+                    optional  => [qw(start end step maxrows)],
+                    data      => {
+                      mandatory => [qw()],
+                      optional  => [qw(file dsname cfunc
+                                       name cdef vdef
+                                       step start end
+                                      )],
+                    },
                   },
     fetch_start=> { mandatory => [qw()],
                     optional  => [qw(cfunc start end resolution)],
