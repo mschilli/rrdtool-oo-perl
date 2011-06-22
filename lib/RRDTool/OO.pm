@@ -1924,6 +1924,63 @@ instead, do this:
     print OUT $_ for <DUMP>;
     close OUT;
 
+=item I<my $hashref = $rrd-E<gt>xport(...)>
+
+Feed a perl structure with RRA data (Cf. rrdxport man page).
+
+    my $results = $rrd->xport(
+        start => $start_time,
+        end => $end_time ,
+        step => $step,
+        def => [{
+            vname => "load1_vname",
+            file => "foo",
+            dsname => "load1",
+            cfunc => "MAX",
+        },
+        {
+            vname => "load2_vname",
+            file => "foo",
+            dsname => "load2",
+            cfunc => "MIN",
+        }],
+
+        cdef => [{
+            vname => "load2_vname_multiply",
+            rpn => "load2_vname,2,*",
+        }],
+
+        xport => [{
+            vname => "load1_vname",
+            legend => "it_s_gonna_be_legend_",
+        },
+        {
+            vname => "load2_vname",
+            legend => "wait_for_it",
+        },
+        {
+            vname => "load2_vname_multiply",
+            legend => "___dary",
+        }],
+    );
+
+    my $data = $results->{data};
+    my $metadata = $results->{meta};
+
+    print "### METADATA ###\n";
+    print "StartTime: $metadata->{start}\n";
+    print "EndTime: $metadata->{end}\n";
+    print "Step: $metadata->{step}\n";
+    print "Number of data columns: $metadata->{columns}\n";
+    print "Number of data rows: $metadata->{rows}\n";
+    print "Legend: ", join(", ", @{$metadata->{legend}}), "\n";
+
+    print "\n### DATA ###\n";
+    foreach my $entry (@$data) {
+        my $entry_timestamp = shift(@$entry);
+        print "[$entry_timestamp] ", join(" ", @$entry), "\n";
+    }
+
 =item I<my $hashref = $rrd-E<gt>info()>
 
 Grabs the RRD's meta data and returns it as a hashref, holding a
