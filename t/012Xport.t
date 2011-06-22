@@ -92,14 +92,14 @@ my $results = $rrd->xport(
 		legend => "wait_for_it___dary",
 	}],
 );
-use Data::Dumper;
 
-open(D, ">", "/tmp/dumper.txt");
-print D Dumper($results), "\n";
-print D "EndTime: $end_time\n";
-print D "StartTime: $start_time\n";
-close(D);
-
+# use Data::Dumper;
+# open(D, ">", "/tmp/dumper.txt");
+# print D Dumper($results), "\n";
+# print D "EndTime: $end_time\n";
+# print D "StartTime: $start_time\n";
+# close(D);
+ 
 ok(defined($results), "RRDs::xport returns something");
 
 my $meta = $results->{meta};
