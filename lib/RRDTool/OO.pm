@@ -8,7 +8,7 @@ use RRDs;
 use Data::Dumper;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.32';
+our $VERSION = '0.33';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
@@ -107,21 +107,21 @@ our $OPTIONS = {
                     },
                  },
      xport => {
-		mandatory => [qw(xport)],
-		optional  => [qw(def cdef start end step maxrows daemon)],
-		def => {
-			mandatory => [qw(file vname dsname cfunc)],
-			optional => [],
-		},
-		cdef => {
-			mandatory => [qw(vname rpn)],
-			optional => [],
-		},
-		xport => {
-			mandatory => [qw(vname)],
-			optional => [qw(legend)],
-		},
-	},
+        mandatory => [qw(xport)],
+        optional  => [qw(def cdef start end step maxrows daemon)],
+        def => {
+            mandatory => [qw(file vname dsname cfunc)],
+            optional => [],
+        },
+        cdef => {
+            mandatory => [qw(vname rpn)],
+            optional => [],
+        },
+        xport => {
+            mandatory => [qw(vname)],
+            optional => [qw(legend)],
+        },
+    },
     fetch_start=> { mandatory => [qw()],
                     optional  => [qw(cfunc start end resolution)],
                   },
@@ -151,132 +151,6 @@ our $OPTIONS = {
                     optional  => [],
                   },
 };
-
-#################################################
-sub xport {
-#################################################
-	my ($this, @options) = @_;
-
-	my $sname = "xport";
-	my $section = $OPTIONS->{$sname};
-
-	use Data::Dumper;
-	DEBUG(Dumper($OPTIONS));
-	DEBUG(Dumper($section));
-
-	$this->check_options($sname, \@options);
-	$this->print_results([]);
-
-	my %options = @options;
-	my $ref;
-	my @cmd;
-	# If it's a DateTime object, handle it gracefully
-	foreach (qw(start end)) {
-		next unless exists($options{$_});
-		next unless defined($options{$_});
-		if (ref($options{$_}) eq "DateTime") {
-			$options{$_} = $options{$_}->epoch();
-		}
-	}
-
-	foreach my $opt (@{$section->{optional}}) {
-		if (defined($options{$opt}) and ref($options{$opt}) eq "SCALAR") {
-			push(@cmd, "--$opt", $options{$opt});
-			DEBUG("[xport] Pushed option '--$opt' with value '$options{$opt}'");
-		}
-	}
-
-	my %params = (
-		def => [],
-		cdef => [],
-		xport => [],
-	);
-
-	my $string;
-	foreach my $sec (keys(%params)) {
-		next unless (defined($options{$sec}));
-		LOGDIE("$sec section must be an array ref") unless (ref($options{$sec}) eq "ARRAY");
-		foreach my $opts (@{$options{$sec}}) {
-			LOGDIE("$sec/$opts section must be a hash ref") unless (ref($opts) eq "HASH");
-			my @opts = %$opts;
-			$this->check_options("$sname/$sec", \@opts);
-
-			my $array = $params{$sec};
-
-			# DEF
-			if ($sec =~ /^def$/i) {
-				$string = "DEF:";
-				$string .= "$opts->{vname}=";
-				$string .= "$opts->{file}:";
-				$string .= "$opts->{dsname}:";
-				$string .= $opts->{cfunc};
-				push(@$array, $string);
-				DEBUG("[xport] Pushed DEF '$string'");
-			}
-			# CDEF
-			elsif ($sec =~ /^cdef$/i) {
-				$string = "CDEF:";
-				$string .= "$opts->{vname}=";
-				$string .= $opts->{rpn};
-				push(@$array, $string);
-				DEBUG("[xport] Pushed CDEF '$string'");
-			}
-			# XPORT
-			else {
-				$string = "XPORT:";
-				$string .= $opts->{vname};
-				$string .= ":$opts->{legend}" if defined($opts->{legend});
-				push(@$array, $string);
-				DEBUG("[xport] Pushed XPORT '$string'");
-			}
-		}
-
-	}
-
-	# Order matters !
-	foreach my $sec (qw(def cdef xport)) {
-		push(@cmd, @{$params{$sec}}) if (defined($params{$sec}) and scalar @{$params{$sec}} != 0);
-	}
-
-	DEBUG("[xport] RRDs command: ".join(" ", @cmd));
-
-	my @results = $this->RRDs_execute($sname, @cmd);
-	#<meta>
-	#    <start>1308660600</start>
-	#        <step>120</step>
-	#            <end>1308664200</end>
-	#                <rows>31</rows>
-	#                    <columns>2</columns>
-	#                        <legend>
-	#                              <entry>real_used_maximum</entry>
-	#                                    <entry>real_used_average</entry>
-	#                                        </legend>
-	#                                          </meta>
-	#
-	#return @results;
-	LOGDIE("RRDs::xport() failed") unless (scalar @results > 0);
-
-	my %meta_data = (
-		start => $results[0], # Exactly start+step
-		end => $results[1],
-		step => $results[2],
-		columns => $results[3],
-		legend => $results[4],
-	);
-
-	my $time = $meta_data{start};
-
-	my @data;
-	foreach my $data (@{$results[5]}) {
-		push(@data, [$time, @$data]);
-		$time += $meta_data{step};
-	}
-
-	return {
-		meta => \%meta_data,
-		data => \@data,
-	};
-}
 
 my %RRDs_functions = (
     create    => \&RRDs::create,
@@ -1303,6 +1177,128 @@ sub process_print {
                        $p->[1]->{format};
     }
 }
+
+#################################################
+sub xport {
+#################################################
+	my ($this, @options) = @_;
+
+	my $sname = "xport";
+	my $section = $OPTIONS->{$sname};
+
+	use Data::Dumper;
+	DEBUG(Dumper($OPTIONS));
+	DEBUG(Dumper($section));
+
+	$this->check_options($sname, \@options);
+	$this->print_results([]);
+
+	my %options = @options;
+	my $ref;
+	my @cmd;
+	# If it's a DateTime object, handle it gracefully
+	foreach (qw(start end)) {
+		next unless exists($options{$_});
+		next unless defined($options{$_});
+		if (ref($options{$_}) eq "DateTime") {
+			$options{$_} = $options{$_}->epoch();
+		}
+	}
+
+	my @all_options = (@{$section->{optional}}, @{$section->{mandatory}});
+	foreach my $opt (@all_options) {
+		DEBUG("Processing optional option '$opt'");
+		if (defined($options{$opt}) and not ref($options{$opt})) {
+			push(@cmd, "--$opt", $options{$opt});
+			DEBUG("[xport] Pushed option '--$opt' with value '$options{$opt}'");
+		}
+	}
+	undef(@all_options);
+
+	my %params = (
+		def => [],
+		cdef => [],
+		xport => [],
+	);
+
+	my $string;
+	foreach my $sec (keys(%params)) {
+		next unless (defined($options{$sec}));
+		LOGDIE("$sec section must be an array ref") unless (ref($options{$sec}) eq "ARRAY");
+		foreach my $opts (@{$options{$sec}}) {
+			LOGDIE("$sec/$opts section must be a hash ref") unless (ref($opts) eq "HASH");
+			my @opts = %$opts;
+			$this->check_options("$sname/$sec", \@opts);
+
+			my $array = $params{$sec};
+
+			# DEF
+			if ($sec =~ /^def$/i) {
+				$string = "DEF:";
+				$string .= "$opts->{vname}=";
+				$string .= "$opts->{file}:";
+				$string .= "$opts->{dsname}:";
+				$string .= $opts->{cfunc};
+				push(@$array, $string);
+				DEBUG("[xport] Pushed DEF '$string'");
+			}
+			# CDEF
+			elsif ($sec =~ /^cdef$/i) {
+				$string = "CDEF:";
+				$string .= "$opts->{vname}=";
+				$string .= $opts->{rpn};
+				push(@$array, $string);
+				DEBUG("[xport] Pushed CDEF '$string'");
+			}
+			# XPORT
+			else {
+				$string = "XPORT:";
+				$string .= $opts->{vname};
+				$string .= ":$opts->{legend}" if defined($opts->{legend});
+				push(@$array, $string);
+				DEBUG("[xport] Pushed XPORT '$string'");
+			}
+		}
+
+	}
+
+	# Order matters !
+	foreach my $sec (qw(def cdef xport)) {
+		push(@cmd, @{$params{$sec}}) if (defined($params{$sec}) and scalar @{$params{$sec}} != 0);
+	}
+
+	DEBUG("[xport] RRDs command: ".join(" ", @cmd));
+
+	my @results = $this->RRDs_execute($sname, @cmd);
+	LOGDIE("RRDs::xport() failed") unless (scalar @results > 0);
+
+	my %meta_data = (
+		start => $results[0], # Exactly start+step
+		end => $results[1],
+		step => $results[2],
+		columns => $results[3],
+		legend => $results[4],
+	);
+
+	my $time = $meta_data{start};
+
+	my @data;
+	foreach my $data (@{$results[5]}) {
+		push(@data, [$time, @$data]);
+		$time += $meta_data{step};
+	}
+
+	$meta_data{rows} = scalar @data;
+
+    my $results = {
+		meta => \%meta_data,
+		data => \@data,
+	};
+
+    return $this->print_results($results);
+}
+
+
 
 ##########################################
 sub def_or($$) {
