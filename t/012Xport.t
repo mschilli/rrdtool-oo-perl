@@ -105,8 +105,11 @@ ok(defined($results), "RRDs::xport returns something");
 my $meta = $results->{meta};
 my $data = $results->{data};
 
-ok(($meta->{end} % $end_time) == $step, "EndTime matches");
-ok(($meta->{start} % $start_time) == $step, "StartTime matches");
+my $r_end = $meta->{end} % $end_time;
+my $r_start = $meta->{start} % $start_time;
+
+ok((($r_end == $step) or ($r_end == 0)), "EndTime matches");
+ok((($r_start == $step) or ($r_start == 0)), "StartTime matches");
 # ok($meta->{rows} == $nof_iterations, "Number of rows matches");
 ok(ref($meta->{legend}) eq "ARRAY", "Legend is an ARRAY ref");
 ok($meta->{legend}->[0] eq "it_gonna_be_legend", "First legend matches");
