@@ -1,6 +1,8 @@
-0.32  (not yet released)
+0.32  (03/06/2012)
     (ms) [rt.cpan.org #63351] Applied modified patch by Jonas Wagner to
          fix stacked graphs with no legend.
+    (ms) Implements RRDs::xport and returns a Perl structure instead of 
+         basic xport array (Remi Ferrand, Fabien Wernli).
 
 0.31  (05/26/2010)
     (ms) [rt.cpan.org #54870] Fixed typos/pod errors reported by
