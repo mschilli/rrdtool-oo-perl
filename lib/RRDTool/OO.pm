@@ -1186,9 +1186,8 @@ sub xport {
 	my $sname = "xport";
 	my $section = $OPTIONS->{$sname};
 
-	use Data::Dumper;
-	DEBUG(Dumper($OPTIONS));
-	DEBUG(Dumper($section));
+	DEBUG(sub { Dumper($OPTIONS) });
+	DEBUG(sub { Dumper($section) });
 
 	$this->check_options($sname, \@options);
 	$this->print_results([]);
