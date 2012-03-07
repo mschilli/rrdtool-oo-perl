@@ -122,4 +122,4 @@ ok($data->[-1]->[0] == $meta->{end}, "Last data timestamp matches");
 ok($data->[2]->[0] - $data->[1]->[0] == $meta->{step}, "Step is respected between two entries");
 
 # Some cleanup
-#unlink("foo");
+unlink("foo");
