@@ -57,6 +57,7 @@ WriteMakefile(
     PREREQ_PM         => {
                          Log::Log4perl => '0.40',
                          RRDs          => 0,
+                         Storable      => 0,
                          }, # e.g., Module::Name => 1.1
     $ExtUtils::MakeMaker::VERSION >= 6.50 ? (%$meta_merge) : (),
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005

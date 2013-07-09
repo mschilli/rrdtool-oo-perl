@@ -33,7 +33,8 @@
       "runtime" : {
          "requires" : {
             "Log::Log4perl" : "0.40",
-            "RRDs" : "0"
+            "RRDs" : "0",
+            "Storable" : "0"
          }
       }
    },
@@ -43,5 +44,5 @@
          "url" : "http://github.com/mschilli/rrdtool-oo-perl"
       }
    },
-   "version" : "0.32"
+   "version" : "0.33"
 }

@@ -22,3 +22,4 @@ t/009Dry.t
 t/010ABD.t
 t/011Bugs.t
 t/012Xport.t
+t/013Clone.t

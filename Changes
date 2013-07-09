@@ -1,3 +1,8 @@
+0.33  (07/08/2013)
+    (ms) Florian Eckert reported that graph() modified 2nd level
+         entries of the options array passed to it. Used Storable::clone
+         in OO.pm to make a deep copy first.
+
 0.32  (03/06/2012)
     (ms) [rt.cpan.org #63351] Applied modified patch by Jonas Wagner to
          fix stacked graphs with no legend.
