@@ -9,7 +9,7 @@ use Storable;
 use Data::Dumper;
 use Log::Log4perl qw(:easy);
 
-our $VERSION = '0.33';
+our $VERSION = '0.34';
 
    # Define the mandatory and optional parameters for every method.
 our $OPTIONS = {
