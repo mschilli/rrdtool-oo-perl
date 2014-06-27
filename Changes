@@ -1,3 +1,6 @@
+0.34  (06/26/2014)
+    (ms) Added disable_rrdtool_tag option as suggested by Sun Guonian.
+
 0.33  (07/08/2013)
     (ms) Florian Eckert reported that graph() modified 2nd level
          entries of the options array passed to it. Used Storable::clone

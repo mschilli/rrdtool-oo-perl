@@ -53,6 +53,7 @@ our $OPTIONS = {
                                      no_gridfit font_render_mode
                                      font_smoothing_threshold slope_mode
                                      tabwidth units watermark zoom
+                                     disable_rrdtool_tag
                                     )],
                     draw      => {
                       mandatory => [qw()],
