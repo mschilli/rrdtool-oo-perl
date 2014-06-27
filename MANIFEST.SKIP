@@ -7,3 +7,5 @@ docs
 MANIFEST.bak
 adm/release
 .git
+MYMETA.yml
+MYMETA.json
