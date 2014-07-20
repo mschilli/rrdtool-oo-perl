@@ -2,6 +2,9 @@
 
 use Test::More qw(no_plan);
 use RRDTool::OO;
+use FindBin qw( $Bin );
+
+require "$Bin/inc/round.t";
 
 use Log::Log4perl qw(:easy);
 
@@ -67,6 +70,7 @@ $rrd->fetch_skip_undef();
 my $count = 0;
 while(my($time, $val1, $val2) = $rrd->fetch_next()) {
     last unless defined $val1;
+    $val1 = roundfloat( $val1 );
     is("$time:$val1", shift @expected_val1, "match expected value");
     is("$time:$val2", shift @expected_val2, "match expected value");
     $count++;

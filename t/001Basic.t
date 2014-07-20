@@ -2,6 +2,9 @@
 use Test::More qw(no_plan);
 use RRDTool::OO;
 use POSIX qw(setlocale LC_ALL);
+use FindBin qw( $Bin );
+
+require "$Bin/inc/round.t";
 
 use Log::Log4perl qw(:easy);
 #Log::Log4perl->easy_init({level => $INFO, layout => "%L: %m%n", 
@@ -103,6 +106,8 @@ $rrd->fetch_skip_undef();
 my $count = 0;
 while(my($time, $val) = $rrd->fetch_next()) {
     last unless defined $val;
+      # rrdtool has some inaccurracies [rt.cpan.org #97322]
+    $val = roundfloat( $val );
     is("$time:$val", shift @expected, "match expected value");
     $count++;
 }

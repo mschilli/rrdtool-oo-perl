@@ -1,3 +1,7 @@
+0.35  (07/20/2014)
+    (ms) Fix for [rt.cpan.org #97322], now rounding results to cope with
+         floating point inaccuracies in rrdtool. Reported by Andreas König.
+
 0.34  (06/26/2014)
     (ms) Added disable_rrdtool_tag option as suggested by Sun Guonian.
 
