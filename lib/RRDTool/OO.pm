@@ -140,6 +140,9 @@ our $OPTIONS = {
                     optional  => [qw(heartbeat minimum maximum 
                                      type name)],
                   },
+    first      => { mandatory => [],
+                    optional  => [],
+                  },
     last       => { mandatory => [],
                     optional  => [],
                   },
@@ -165,6 +168,7 @@ my %RRDs_functions = (
     dump      => \&RRDs::dump,
     restore   => \&RRDs::restore,
     tune      => \&RRDs::tune,
+    first     => \&RRDs::first,
     last      => \&RRDs::last,
     info      => \&RRDs::info,
     rrdresize => \&RRDs::rrdresize,
