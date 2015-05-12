@@ -1037,6 +1037,14 @@ sub info {
 }
 
 #################################################
+sub first {
+#################################################
+    my($self) = @_;
+
+    $self->RRDs_execute("first", $self->{file});
+}
+
+#################################################
 sub last {
 #################################################
     my($self) = @_;
@@ -1992,6 +2000,10 @@ Feed a perl structure with RRA data (Cf. rrdxport man page).
 
 Grabs the RRD's meta data and returns it as a hashref, holding a
 map of parameter names and their values.
+
+=item I<my $time = $rrd-E<gt>first()>
+
+Return the RRD's first update time.
 
 =item I<my $time = $rrd-E<gt>last()>
 

@@ -72,4 +72,11 @@ my $time = $rrd->last();
 
 like($time, qr/^\d+$/, 'last update timestamp');
 
+#####################################################
+# Get first update
+#####################################################
+my $time = $rrd->first();
+
+like($time, qr/^\d+$/, 'first update timestamp');
+
 END { unlink "foo"; }
