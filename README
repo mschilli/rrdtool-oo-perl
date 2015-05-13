@@ -1,5 +1,5 @@
 ######################################################################
-    RRDTool::OO 0.35
+    RRDTool::OO 0.36
 ######################################################################
 
 NAME
@@ -618,6 +618,9 @@ DESCRIPTION
     *my $hashref = $rrd->info()*
         Grabs the RRD's meta data and returns it as a hashref, holding a map
         of parameter names and their values.
+
+    *my $time = $rrd->first()*
+        Return the RRD's first update time.
 
     *my $time = $rrd->last()*
         Return the RRD's last update time.

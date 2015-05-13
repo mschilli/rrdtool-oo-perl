@@ -1,3 +1,6 @@
+0.36  (05/12/2015)
+    (ms) Gelu Lupa added RRD's first() function.
+
 0.35  (07/20/2014)
     (ms) Fix for [rt.cpan.org #97322], now rounding results to cope with
          floating point inaccuracies in rrdtool. Reported by Andreas König.
