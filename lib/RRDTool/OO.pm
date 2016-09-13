@@ -2130,12 +2130,6 @@ RRAs (for example, HWPREDICT references SEASONAL), but this will
 be taken care of automatically by RRDTool::OO with no user
 interaction required whatsoever.
 
-=head2 Development Status
-
-The following methods are not yet implemented:
-
-C<rrdresize>, C<xport>, C<rrdcgi>.
-
 =head2 Print Output
 
 The C<graph> method can be configured to have RRDTool's C<graph>
