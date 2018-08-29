@@ -1092,9 +1092,9 @@ sub process_draw {
 
             # Create the draw strings
             # DEF:vname=rrdfile:ds-name:CF[:step=step][:start=time][:end=time]
-            my $def = "DEF:$p->{name}=$p->{file}:$p->{dsname}:$p->{cfunc}";
-            map { $def .= ":$_=$p->{$_}" } grep { defined $p->{$_} } qw(step start end);
-            push @$options, $def;
+            push @$options, join ':',
+                'DEF', "$p->{name}=$p->{file}", $p->{dsname}, $p->{cfunc},
+                map { "$_=$p->{$_}" } grep { defined $p->{$_} } qw(step start end);
         }
 
             #LINE2:myload#FF0000
