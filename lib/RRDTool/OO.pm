@@ -60,6 +60,8 @@ our $OPTIONS = {
                       optional  => [qw(file dsname cfunc thickness 
                                        type color legend name cdef vdef
                                        stack step start end
+                                       dashes dash_offset
+                                       skipscale
                                       )],
                     },
                     color     => {
@@ -1057,6 +1059,7 @@ sub process_draw {
 ###########################################
     my($self, $p, $options, $options_hash, $draw_count) = @_;
 
+
     $self->check_options("graph/draw", [%$p]);
 
         $p->{thickness} ||= 1;        # LINE1 is default
@@ -1109,6 +1112,28 @@ sub process_draw {
         }
 
         $draw_attributes .= ":STACK" if exists $p->{stack};
+
+        $draw_attributes .= ":skipscale" if exists $p->{skipscale};
+
+        # "The dashes modifier enables dashed line style. Without any
+        # further options a symmetric dashed line with a segment length
+        # of 5 pixels will be drawn. The dash pattern can be changed if
+        # the dashes= parameter is followed by either one value or an
+        # even number (1, 2, 4, 6, ...) of positive values. Each value
+        # provides the length of alternate on_s and off_s portions of
+        # the stroke. The dash-offset parameter specifies an offset
+        # into the pattern at which the stroke begins"
+        if(exists $p->{dashes} ) {
+            if(defined($p->{dashes})) {
+                $draw_attributes .= ":dashes=$p->{dashes}";
+            }
+            else {
+                $draw_attributes .= ":dashes";
+            }
+        }
+        if( $p->{dashes} && $p->{dash_offset} && defined $p->{dash_offset} ) {
+            $draw_attributes .= ":dash-offset=$p->{dash_offset}";
+        }
 
         if($p->{type} eq "hidden") {
             # Invisible graph
@@ -1752,7 +1777,10 @@ C<no_legend>,
 C<only_graph>, 
 C<force_rules_legend>, 
 C<title>, 
-C<step>.
+C<step>,
+C<dashes>,
+C<dash_offset>,
+C<skip_scale>.
 
 Some options (e.g. C<alt_y_grid>) don't expect values, they need to
 be specified like
@@ -1760,6 +1788,23 @@ be specified like
     alt_y_grid => undef
 
 in order to be passed properly to RRDTool.
+
+The C<line> option C<dashes> can be assigned C<undef> to use the default
+pattern, or assigned a comma seperated string to specify custom patterns.
+
+ $rrd->graph(
+   ...
+   draw => { type => 'line',
+             dashes => undef,  # Default dash pattern.
+             ...
+   },
+   draw => { type => 'line',
+             dashes => '5,2',  # Custom dash pattern.
+             dash_offset => 3, # Offset the dash pattern.
+             ...
+   },
+   ...
+ );
 
 The C<color> option expects a reference to a hash with various settings
 for the different graph areas:
